@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v16.0)</title>
+    <title>AI 智能翻譯機 (v17.0)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* ================= 全域設定 ================= */
@@ -99,7 +99,7 @@
         }
         .mic-btn:active { cursor: grabbing; }
 
-        /* === 需求 1: 麥克風位置對稱於兩端 (Screen Ends) === */
+        /* === 麥克風位置對稱於兩端 (Screen Ends) === */
         /* Top Half 旋轉了180度，所以它的 'bottom' 實際上是螢幕的 'top' (視覺上) */
         #topMicBtn { 
             top: auto;
@@ -148,7 +148,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v16.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v17.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -179,11 +179,27 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script>
     let userApiKey = ''; let selectedModel = ''; 
-    const languages=[{name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},{name:'English',prompt:'English',speechCode:'en-US'},{name:'日本語',prompt:'Japanese',speechCode:'ja-JP'},{name:'한국어',prompt:'Korean',speechCode:'ko-KR'},{name:'Français',prompt:'French',speechCode:'fr-FR'},{name:'Español',prompt:'Spanish',speechCode:'es-ES'},{name:'Deutsch',prompt:'German',speechCode:'de-DE'},{name:'Tiếng Việt',prompt:'Vietnamese',speechCode:'vi-VN'},{name:'ภาษาไทย',prompt:'Thai',speechCode:'th-TH'}];
+    // v17.0: 語言列表增加中文標示
+    const languages=[
+        {name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},
+        {name:'English (英語)',prompt:'English',speechCode:'en-US'},
+        {name:'日本語 (日語)',prompt:'Japanese',speechCode:'ja-JP'},
+        {name:'한국어 (韓語)',prompt:'Korean',speechCode:'ko-KR'},
+        {name:'Français (法語)',prompt:'French',speechCode:'fr-FR'},
+        {name:'Español (西班牙語)',prompt:'Spanish',speechCode:'es-ES'},
+        {name:'Deutsch (德語)',prompt:'German',speechCode:'de-DE'},
+        {name:'Tiếng Việt (越南語)',prompt:'Vietnamese',speechCode:'vi-VN'},
+        {name:'ภาษาไทย (泰語)',prompt:'Thai',speechCode:'th-TH'}
+    ];
     let currentMode='text',recognition,isListening=false,activeMicSide=null,synth=window.speechSynthesis;
 
     // Toast & Modal
-    function showToast(m,t='normal'){const c=document.getElementById('toast-container'),d=document.createElement('div');d.className='toast'+(t==='error'?' error':'');d.innerHTML=m;c.appendChild(d);requestAnimationFrame(()=>d.classList.add('show'));setTimeout(()=>{d.classList.remove('show');setTimeout(()=>d.remove(),300)},6000)}
+    function showToast(m,t='normal'){
+        const c=document.getElementById('toast-container'),d=document.createElement('div');
+        d.className='toast'+(t==='error'?' error':'');
+        d.innerHTML=m;
+        c.appendChild(d);requestAnimationFrame(()=>d.classList.add('show'));setTimeout(()=>{d.classList.remove('show');setTimeout(()=>d.remove(),300)},6000);
+    }
     function openModal(id){const m=document.getElementById(id);m.style.display='flex';requestAnimationFrame(()=>m.classList.add('show'));}
     function closeModal(id){const m=document.getElementById(id);m.classList.remove('show');setTimeout(()=>m.style.display='none',300);}
 
@@ -299,10 +315,6 @@
             if (isDragging) {
                 if(e.type === 'touchmove') e.preventDefault();
                 if (side === 'top') {
-                    // 對於旋轉 180 度的 Top Half，X 軸反向，Y 軸反向
-                    // 但因為 CSS Transform 已經處理了渲染，我們只需要更新 offset
-                    // 如果往右拖 (deltaX > 0)，視覺上是往左，DOM left 應該減小
-                    // 如果往下拖 (deltaY > 0)，視覺上是往上，DOM top 應該減小
                     btn.style.left = (startLeft - deltaX) + 'px';
                     btn.style.top = (startTop - deltaY) + 'px';
                 } else {
