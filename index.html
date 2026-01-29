@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 雙向智能翻譯機 (v5.0 Gemini 2.0版)</title>
+    <title>AI 雙向智能翻譯機 (v6.0 智慧切換版)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* CSS 樣式維持不變 */
@@ -78,9 +78,6 @@
                 <button class="btn-secondary" onclick="closeSettings()">取消</button>
                 <button class="btn-primary" onclick="saveApiKey()">儲存設定</button>
             </div>
-            <div style="margin-top:10px;">
-                <button class="btn-warning" style="width:100%;" onclick="runDiagnostics()"><i class="fas fa-stethoscope"></i> 診斷連線</button>
-            </div>
             <div style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
                 <button class="btn-danger" style="font-size:14px; padding:8px;" onclick="executeReset()"><i class="fas fa-trash"></i> 清除 Key</button>
             </div>
@@ -91,7 +88,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v5.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v6.0)</h2>
             <div class="controls">
                 <select id="textSourceLang"></select>
                 <button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button>
@@ -100,7 +97,7 @@
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
             <textarea id="textOutput" class="output-box" placeholder="翻譯結果..." readonly></textarea>
             <button id="textTranslateBtn" class="translate-btn" onclick="doTextTranslation()">開始翻譯</button>
-            <div id="textLoading" class="loading-text"><i class="fas fa-spinner fa-spin"></i> Gemini 2.0 思考中...</div>
+            <div id="textLoading" class="loading-text"><i class="fas fa-spinner fa-spin"></i> 正在尋找可用模型...</div>
         </div>
     </div>
 
@@ -135,21 +132,6 @@
     function saveApiKey(){const k=document.getElementById('apiKeyInput').value.trim();if(k){localStorage.setItem('gemini_api_key',k);userApiKey=k;closeModal('settingsModal');showToast("API Key 設定成功");}else{showToast("請輸入 Key","error");}}
     function executeReset(){localStorage.removeItem('gemini_api_key');userApiKey='';closeModal('settingsModal');showToast("Key 已清除");setTimeout(()=>openSettings(),1000);}
 
-    async function runDiagnostics() {
-        if (!userApiKey) { showToast("請先儲存 API Key","error"); return; }
-        showToast("正在檢測 Key 權限...", "normal");
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${userApiKey}`);
-            const data = await response.json();
-            if (response.ok && data.models) {
-                const modelNames = data.models.map(m => m.name);
-                alert("✅ 檢測成功！\n\n您的 Key 可以存取：\n" + modelNames.join("\n"));
-            } else {
-                alert(`❌ 檢測失敗！\nGoogle 回傳：${JSON.stringify(data)}`);
-            }
-        } catch (e) { alert("❌ 連線錯誤！無法連接 Google 伺服器。"); }
-    }
-
     const languages=[{name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},{name:'English',prompt:'English',speechCode:'en-US'},{name:'日本語',prompt:'Japanese',speechCode:'ja-JP'},{name:'한국어',prompt:'Korean',speechCode:'ko-KR'},{name:'Français',prompt:'French',speechCode:'fr-FR'},{name:'Español',prompt:'Spanish',speechCode:'es-ES'},{name:'Deutsch',prompt:'German',speechCode:'de-DE'},{name:'Tiếng Việt',prompt:'Vietnamese',speechCode:'vi-VN'},{name:'ภาษาไทย',prompt:'Thai',speechCode:'th-TH'}];
     let currentMode='text',recognition,isListening=false,activeMicSide=null,synth=window.speechSynthesis;
     window.onload=()=>{initApiKey();initLanguageSelects();updateVoiceLabels();checkSpeechSupport();};
@@ -159,31 +141,53 @@
     function updateVoiceLabels(){const s=document.getElementById('textSourceLang').value,t=document.getElementById('textTargetLang').value;document.getElementById('bottomLangLabel').innerText=languages[s].name;document.getElementById('topLangLabel').innerText=languages[t].name;}
 
     // ==========================================
-    // 關鍵修正：使用 gemini-2.0-flash
+    // 關鍵修正：自動切換模型的邏輯 (Fallback)
     // ==========================================
-    async function callGeminiAPI(text,sP,tP){
+    async function callGeminiAPI(text, sP, tP) {
         if(!userApiKey){showToast("請設定 Key","error");openSettings();throw new Error("No Key");}
         
-        // 根據您的截圖，鎖定使用 gemini-2.0-flash
-        const modelName = 'gemini-2.0-flash';
+        // 定義備援順序：
+        // 1. 先試用戶可能有的 2.0 (但可能沒額度)
+        // 2. 再試標準 1.5-flash (免費版最穩)
+        // 3. 最後試 1.5-pro
+        const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
         
+        let lastError = null;
         const prompt=`You are a professional translator. Translate from ${sP} to ${tP}. Only output the translated text. Text: "${text}"`;
-        try{
-            const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`,{
-                method:'POST',headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-            });
-            if(!res.ok){
-                const err=await res.json();
-                console.error(err);
-                let msg=`API Error ${res.status}`;
-                if(err.error) msg=err.error.message;
-                showToast("翻譯失敗","error");
-                return `[系統訊息] ${msg}`;
+
+        for (const model of models) {
+            try {
+                // console.log("Trying model:", model); // Debug用
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userApiKey}`,{
+                    method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+                });
+                
+                // 成功了！直接回傳
+                if(res.ok) {
+                    const data = await res.json();
+                    if(data.candidates) return data.candidates[0].content.parts[0].text.trim();
+                } 
+                
+                // 失敗了，分析原因
+                const err = await res.json();
+                lastError = err;
+                
+                // 如果是 429 (Quota Exceeded) 或 404 (Not Found)，我們會繼續試下一個模型
+                // 所以這裡不 throw，只記錄錯誤，讓迴圈繼續
+                
+            } catch(e) {
+                lastError = e;
             }
-            const data=await res.json();
-            if(data.candidates)return data.candidates[0].content.parts[0].text.trim();
-        }catch(e){console.error(e);showToast("連線錯誤","error");return `[連線失敗] ${e.message}`;}
+        }
+
+        // 如果跑到這裡，代表全部模型都失敗
+        console.error("All models failed", lastError);
+        let msg = "所有模型皆無法使用";
+        if(lastError && lastError.error) msg = lastError.error.message;
+        
+        showToast("翻譯失敗，請檢查額度", "error");
+        return `[系統訊息] 翻譯失敗: ${msg}`;
     }
 
     async function doTextTranslation(){const i=document.getElementById('textInput'),o=document.getElementById('textOutput'),b=document.getElementById('textTranslateBtn'),l=document.getElementById('textLoading');if(!i.value.trim())return;b.disabled=true;l.style.display='block';o.value='';const s=document.getElementById('textSourceLang').value,t=document.getElementById('textTargetLang').value;try{o.value=await callGeminiAPI(i.value,languages[s].prompt,languages[t].prompt)}catch(e){o.value="Error"}finally{b.disabled=false;l.style.display='none'}}
