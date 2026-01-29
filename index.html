@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v27.0 即時回饋版)</title>
+    <title>AI 智能翻譯機 (v28.0 iOS音訊與對稱修復)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* ================= 全域設定 ================= */
@@ -130,9 +130,21 @@
         }
         .mic-btn:active { cursor: grabbing; }
         
-        /* Android/iOS 統一對稱底部距離 */
-        #topMicBtn { top: auto; bottom: calc(30px + env(safe-area-inset-top)); }
-        #bottomMicBtn { top: auto; bottom: calc(30px + env(safe-area-inset-bottom)); background-color: var(--secondary-color); box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4); }
+        /* v28.0: 對稱性修復 - 使用 top: 30px (相對於內側/分隔線)
+           Top Half 旋轉後，CSS Top = 視覺 Splitter 附近
+           Bottom Half 正常，CSS Top = 視覺 Splitter 附近
+        */
+        #topMicBtn { 
+            top: 30px; 
+            bottom: auto; 
+        }
+        
+        #bottomMicBtn { 
+            top: 30px; 
+            bottom: auto; 
+            background-color: var(--secondary-color); 
+            box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4); 
+        }
         
         .mic-btn.listening { animation: pulse 1.5s infinite; background-color: var(--danger-color) !important; box-shadow: 0 6px 20px rgba(217, 48, 37, 0.4); }
         @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); } }
@@ -168,7 +180,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v27.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v28.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -343,7 +355,6 @@
         
         recog.onerror = (e) => { 
             console.error("Speech Error:", e.error); 
-            // 如果是自動斷開，不視為嚴重錯誤
             if (e.error !== 'no-speech') {
                 stopListening(); 
             }
@@ -351,10 +362,6 @@
         };
         
         recog.onend = () => { 
-            // 這裡不需要做任何事，因為停止邏輯由 handleEnd 控制
-            // 如果是系統自動斷開，也只是 reset 狀態
-            // 重要：不要在這裡 call updateMicUI(false) 除非確認要完全停止
-            // 但為了保險起見，我們還是 reset
             isListening = false;
             updateMicUI(false);
 
@@ -398,6 +405,16 @@
         let isPressing = false;
 
         const handleStart = (e) => {
+            // v28.0 Fix: Pre-authorize Audio Context on Touch
+            if(synth) {
+                synth.cancel(); // Clear queue
+                // Create a silent, short utterance to wake up the engine
+                const empty = new SpeechSynthesisUtterance(" ");
+                empty.volume = 0; // Silent
+                empty.duration = 0.1;
+                synth.speak(empty);
+            }
+
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             startX = clientX; startY = clientY;
@@ -475,7 +492,6 @@
 
     // v27.0: 立即變色邏輯 (Optimistic UI)
     function startListening(side){
-        if(synth) synth.cancel();
         if(isListening) return;
         
         if (isIOS) {
