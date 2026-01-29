@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v21.0 iOS修復版)</title>
+    <title>AI 智能翻譯機 (v22.0 iOS 最終修復)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* ================= 全域設定 ================= */
@@ -28,7 +28,6 @@
 
         /* 直式語音模式 - 按鈕獨立並移至下拉選單右側 */
         body.voice-mode-portrait .header-controls { 
-            /* 初始位置由 JS 動態控制 */
             top: calc(50% + 20px); 
             right: 10px; left: auto; transform: none; 
             background: transparent; border: none; box-shadow: none; padding: 0; gap: 8px; 
@@ -84,12 +83,11 @@
         #voiceMirroredContainer { display: none; flex-direction: column; height: 100%; width: 100%; background: #fff; overflow: hidden; }
         .half-screen { display: flex; flex-direction: column; padding: 20px; overflow-y: hidden; position: relative; }
         
-        /* 可活動區域設定 */
         .top-half { 
             background-color: var(--mirrored-bg-top); 
             transform: rotate(180deg); 
             border-bottom: 1px solid #ccdcee; 
-            height: calc(50% - 5px); /* 初始高度 */
+            height: calc(50% - 5px); 
             flex: none; 
             min-height: 20%; max-height: 80%; 
         }
@@ -165,7 +163,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v21.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v22.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -320,7 +318,13 @@
     function checkSpeechSupport(){
         if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){showToast("請用 Chrome","error");document.getElementById('voiceModeBtn').disabled=true;}else{
             const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-            recognition=new SR(); recognition.continuous=true; recognition.interimResults=true;
+            recognition=new SR(); 
+            
+            // v22.0 Fix: Force single-shot on iOS to prevent bugs
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            recognition.continuous = !isIOS; 
+            
+            recognition.interimResults = true;
             recognition.onstart=()=>{ isListening=true; updateMicUI(true); };
             recognition.onresult=(e)=>{
                 let interim = '', final = '';
@@ -329,10 +333,8 @@
                 if(final) window.lastFinalTranscript = final;
             };
             
-            // v21.0 Fix: Robust Error Handling for iOS
             recognition.onerror=(e)=>{ 
                 console.error("Speech Error:", e.error); 
-                // Always reset state on error to prevent dead button
                 stopListening();
                 if(e.error === 'not-allowed') showToast("無法存取麥克風，請檢查權限", "error");
             };
@@ -356,7 +358,7 @@
         const btn = document.getElementById(btnId);
         let startX, startY, startLeft, startTop;
         let isDragging = false;
-        let dragThreshold = 10; // v21.0 Fix: Increased threshold
+        let dragThreshold = 10;
         let isPressing = false;
 
         const handleStart = (e) => {
@@ -437,23 +439,14 @@
     function playTextTranslation() { const text = document.getElementById('textOutput').value; const targetLangIdx = document.getElementById('textTargetLang').value; if(text) { speakText(text, languages[targetLangIdx].speechCode); } else { showToast("沒有可播放的文字"); } }
 
     function startListening(side){
-        if(isListening) return; 
-        activeMicSide=side; 
-        window.lastFinalTranscript = '';
+        // v22.0 Fix: Cancel TTS to prevent audio conflict on iOS
+        if(synth) synth.cancel();
+        
+        if(isListening) return; activeMicSide=side; window.lastFinalTranscript = '';
         const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
         recognition.lang = (side === 'top') ? languages[topIdx].speechCode : languages[bottomIdx].speechCode;
         document.getElementById(side+'OriginalText').innerText='...'; document.getElementById((side==='top'?'bottom':'top')+'TranslatedText').innerText='...';
-        
-        // v21.0 Fix: Catch start errors (like already started)
-        try { recognition.start(); } 
-        catch(e) { 
-            console.warn("Start error:", e); 
-            // If invalid state (already running), ignore. If other error, reset.
-            if(e.name !== 'InvalidStateError') {
-                isListening = false;
-                updateMicUI(false);
-            }
-        }
+        try { recognition.start(); } catch(e) { console.warn("Start error:", e); if(e.name !== 'InvalidStateError') { isListening = false; updateMicUI(false); } }
     }
     function stopListening(){ if(recognition) recognition.stop(); }
     function updateMicUI(l){ document.getElementById('topMicBtn').classList.toggle('listening',l&&activeMicSide==='top'); document.getElementById('bottomMicBtn').classList.toggle('listening',l&&activeMicSide==='bottom'); }
