@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v11.0 語音引導版)</title>
+    <title>AI 智能翻譯機 (v12.0)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* CSS 樣式完全維持不變 */
+        /* CSS 樣式 */
         :root { --primary-color: #4285F4; --secondary-color: #34A853; --danger-color: #d93025; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #333; --mirrored-bg-top: #e8f0fe; --mirrored-bg-bottom: #e6f4ea; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Roboto', Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; color: var(--text-color); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -26,8 +26,8 @@
         .btn-secondary { background: #eee; color: #555; }
         .btn-danger { background: var(--danger-color); color: white; }
         .btn-warning { background: #fbbc04; color: #333; }
-        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 100%; align-items: center; }
-        .toast { background: rgba(40, 40, 40, 0.95); color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; align-items: center; }
+        .toast { background: rgba(40, 40, 40, 0.95); color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; word-break: break-word;}
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background: #d93025; }
         #textModeContainer { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 20px; overflow-y: auto; }
@@ -43,25 +43,67 @@
         button.translate-btn { width: 100%; padding: 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3); }
         button.translate-btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
         .loading-text { display: none; text-align: center; margin-top: 15px; color: #666; font-size: 14px; }
-        #voiceMirroredContainer { display: none; flex-direction: column; height: 100%; width: 100%; background: #fff; }
-        .half-screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; position: relative; }
+        
+        /* 語音鏡像模式優化 */
+        #voiceMirroredContainer { display: none; flex-direction: column; height: 100%; width: 100%; background: #fff; overflow: hidden; }
+        .half-screen { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            overflow-y: hidden; /* 防止整個半屏滾動 */
+            position: relative; 
+            /* v12.0 為了讓懸浮按鈕不擋住文字，給上方留空間 (因為按鈕現在在中間) */
+            padding-top: 90px; 
+        }
         .top-half { background-color: var(--mirrored-bg-top); transform: rotate(180deg); border-bottom: 1px solid #ccdcee; }
         .bottom-half { background-color: var(--mirrored-bg-bottom); border-top: 1px solid #cce5d0; }
-        .lang-select-container { font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start; }
+        
+        .lang-select-container { 
+            font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; 
+            background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start;
+        }
         .voice-lang-select { border: none; background: transparent; font-size: 16px; font-weight: bold; color: #333; cursor: pointer; appearance: none; border-bottom: 1px dashed #999; }
-        .speech-bubble { background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; font-size: 18px; min-height: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); word-break: break-word; line-height: 1.4; border: 1px solid rgba(0,0,0,0.05); }
+        
+        /* v12.0 優化：對話框滑軌與高度限制 */
+        .speech-bubble { 
+            background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; 
+            font-size: 18px; min-height: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
+            word-break: break-word; line-height: 1.4; border: 1px solid rgba(0,0,0,0.05);
+            /* 防止溢出 */
+            max-height: 35vh; 
+            overflow-y: auto; 
+        }
         .speech-bubble.translated { background: #fff; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         .bottom-half .speech-bubble.translated { border-color: var(--secondary-color); color: var(--secondary-color); }
-        .mic-controls { margin-top: auto; display: flex; justify-content: center; padding-top: 15px; }
+        
+        /* v12.0 優化：按鈕懸浮置中 */
+        .mic-controls { 
+            position: absolute;
+            top: 10px; /* 貼齊該區塊的「頂部」(因為旋轉，Top的頂部其實是畫面中央) */
+            left: 0; 
+            right: 0;
+            display: flex; 
+            justify-content: center; 
+            z-index: 10;
+            /* 移除原本的 margin 設定 */
+        }
+        
         .mic-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background-color: var(--primary-color); color: white; font-size: 28px; cursor: pointer; box-shadow: 0 6px 15px rgba(66, 133, 244, 0.4); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
         .bottom-half .mic-btn { background-color: var(--secondary-color); box-shadow: 0 6px 15px rgba(52, 168, 83, 0.4); }
         .mic-btn.listening { animation: pulse 1.5s infinite; background-color: var(--danger-color) !important; box-shadow: 0 6px 15px rgba(217, 48, 37, 0.4); }
+        
         #model-selector-container { margin-bottom: 10px; padding: 10px; background: #eef2f8; border-radius: 10px; border: 1px dashed #ccc; font-size: 14px; color: #555; display: flex; align-items: center; justify-content: space-between; }
         #current-model-select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 13px; max-width: 200px; }
         .output-wrapper { position: relative; }
         .play-btn { position: absolute; bottom: 25px; right: 10px; background: none; border: none; color: var(--primary-color); font-size: 20px; cursor: pointer; padding: 5px; opacity: 0.6; transition: opacity 0.2s; }
         .play-btn:hover { opacity: 1; transform: scale(1.1); }
-        @media (max-width: 480px) { .text-card { padding: 20px; width: 95%; margin-top: 50px; } .mic-btn { width: 64px; height: 64px; } .custom-window { width: 85%; } }
+        @media (max-width: 480px) { 
+            .text-card { padding: 20px; width: 95%; margin-top: 50px; } 
+            .mic-btn { width: 64px; height: 64px; } 
+            .custom-window { width: 85%; } 
+            .half-screen { padding: 15px; padding-top: 80px; }
+        }
     </style>
 </head>
 <body>
@@ -88,7 +130,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v11.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v12.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -103,20 +145,20 @@
 
     <div id="voiceMirroredContainer">
         <div class="half-screen top-half">
-            <div class="lang-select-container"><i class="fas fa-user-friends"></i> 對方: <select id="voiceTopLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-            <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
             <div class="mic-controls">
                 <button id="topMicBtn" class="mic-btn" onmousedown="startListening('top')" onmouseup="stopListening()" ontouchstart="startListening('top')" ontouchend="stopListening()"><i class="fas fa-microphone"></i></button>
             </div>
+            <div class="lang-select-container"><i class="fas fa-user-friends"></i> 對方: <select id="voiceTopLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
+            <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
+            <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
         </div>
         <div class="half-screen bottom-half">
-            <div class="lang-select-container"><i class="fas fa-user"></i> 我方: <select id="voiceBottomLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-            <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
             <div class="mic-controls">
                 <button id="bottomMicBtn" class="mic-btn" onmousedown="startListening('bottom')" onmouseup="stopListening()" ontouchstart="startListening('bottom')" ontouchend="stopListening()"><i class="fas fa-microphone"></i></button>
             </div>
+            <div class="lang-select-container"><i class="fas fa-user"></i> 我方: <select id="voiceBottomLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
+            <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
+            <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
         </div>
     </div>
 
@@ -126,12 +168,11 @@
     const languages=[{name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},{name:'English',prompt:'English',speechCode:'en-US'},{name:'日本語',prompt:'Japanese',speechCode:'ja-JP'},{name:'한국어',prompt:'Korean',speechCode:'ko-KR'},{name:'Français',prompt:'French',speechCode:'fr-FR'},{name:'Español',prompt:'Spanish',speechCode:'es-ES'},{name:'Deutsch',prompt:'German',speechCode:'de-DE'},{name:'Tiếng Việt',prompt:'Vietnamese',speechCode:'vi-VN'},{name:'ภาษาไทย',prompt:'Thai',speechCode:'th-TH'}];
     let currentMode='text',recognition,isListening=false,activeMicSide=null,synth=window.speechSynthesis;
 
-    // 修改：showToast 支援 HTML
     function showToast(m,t='normal'){
         const c=document.getElementById('toast-container'),d=document.createElement('div');
         d.className='toast'+(t==='error'?' error':'');
-        d.innerHTML=m; // 改為 innerHTML 以支援連結
-        c.appendChild(d);requestAnimationFrame(()=>d.classList.add('show'));setTimeout(()=>{d.classList.remove('show');setTimeout(()=>d.remove(),300)},6000); // 延長顯示時間方便點擊
+        d.innerHTML=m;
+        c.appendChild(d);requestAnimationFrame(()=>d.classList.add('show'));setTimeout(()=>{d.classList.remove('show');setTimeout(()=>d.remove(),300)},6000);
     }
     function openModal(id){const m=document.getElementById(id);m.style.display='flex';requestAnimationFrame(()=>m.classList.add('show'));}
     function closeModal(id){const m=document.getElementById(id);m.classList.remove('show');setTimeout(()=>m.style.display='none',300);}
@@ -234,7 +275,7 @@
     }
 
     // ==========================================
-    // 關鍵修正：語音合成邏輯 + 安裝教學連結 (v11.0)
+    // v12.0 語音合成邏輯 + Windows 專屬連結
     // ==========================================
     function speakText(t, l) {
         if (!synth) return;
@@ -246,15 +287,13 @@
         const u = new SpeechSynthesisUtterance(t);
         u.lang = l;
 
-        // 1. 精準匹配 (語言代碼)
+        // 1. 精準匹配
         let v = voices.find(voice => voice.lang === l);
-
-        // 2. 寬鬆匹配 (語言前綴)
+        // 2. 寬鬆匹配
         if (!v) {
             const shortLang = l.split('-')[0];
             v = voices.find(voice => voice.lang.startsWith(shortLang));
         }
-
         // 3. 關鍵字暴力匹配
         if (!v) {
             const langNameMap = { 'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea' };
@@ -271,7 +310,15 @@
             console.warn("找不到語音，使用系統預設:", l);
             // 4. 如果連暴力匹配都找不到，提供安裝連結
             if(l.includes('vi') || l.includes('th')) {
-               const helpUrl = "https://www.google.com/search?q=install+text+to+speech+voice+" + l;
+               let helpUrl = "https://www.google.com/search?q=install+text+to+speech+voice+" + l;
+               
+               // Windows 專屬判斷
+               const isWindows = navigator.platform.indexOf('Win') > -1 || navigator.userAgent.indexOf('Windows') > -1;
+               if (isWindows) {
+                   // 引導至 Windows 設定搜尋
+                   helpUrl = "https://www.google.com/search?q=windows+10+add+language+speech+pack+" + l;
+               }
+
                showToast(`未安裝該語言語音包 <a href="${helpUrl}" target="_blank" style="color:#80dfff;text-decoration:underline;margin-left:5px;">點此安裝教學 &rarr;</a>`, "normal");
             }
         }
