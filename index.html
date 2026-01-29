@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v7.0 自動偵測版)</title>
+    <title>AI 智能翻譯機 (v8.0)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* CSS 樣式維持不變，新增了模型選擇器的樣式 */
+        /* CSS 維持 v7.0 基底，新增播放鈕與選單樣式 */
         :root { --primary-color: #4285F4; --secondary-color: #34A853; --danger-color: #d93025; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #333; --mirrored-bg-top: #e8f0fe; --mirrored-bg-bottom: #e6f4ea; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Roboto', Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; color: var(--text-color); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -47,7 +47,17 @@
         .half-screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; position: relative; }
         .top-half { background-color: var(--mirrored-bg-top); transform: rotate(180deg); border-bottom: 1px solid #ccdcee; }
         .bottom-half { background-color: var(--mirrored-bg-bottom); border-top: 1px solid #cce5d0; }
-        .lang-label { font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start; }
+        
+        /* 修改：語音模式的語言標籤改為下拉選單容器 */
+        .lang-select-container { 
+            font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; 
+            background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start;
+        }
+        .voice-lang-select {
+            border: none; background: transparent; font-size: 16px; font-weight: bold; color: #333; cursor: pointer; appearance: none;
+            border-bottom: 1px dashed #999;
+        }
+
         .speech-bubble { background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; font-size: 18px; min-height: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); word-break: break-word; line-height: 1.4; border: 1px solid rgba(0,0,0,0.05); }
         .speech-bubble.translated { background: #fff; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         .bottom-half .speech-bubble.translated { border-color: var(--secondary-color); color: var(--secondary-color); }
@@ -56,15 +66,19 @@
         .bottom-half .mic-btn { background-color: var(--secondary-color); box-shadow: 0 6px 15px rgba(52, 168, 83, 0.4); }
         .mic-btn.listening { animation: pulse 1.5s infinite; background-color: var(--danger-color) !important; box-shadow: 0 6px 15px rgba(217, 48, 37, 0.4); }
         
-        /* v7.0 新增：模型選擇器樣式 */
-        #model-selector-container {
-            margin-bottom: 10px; padding: 10px; background: #eef2f8; border-radius: 10px; border: 1px dashed #ccc; font-size: 14px; color: #555;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        #current-model-select {
-            padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 13px; max-width: 200px;
-        }
+        #model-selector-container { margin-bottom: 10px; padding: 10px; background: #eef2f8; border-radius: 10px; border: 1px dashed #ccc; font-size: 14px; color: #555; display: flex; align-items: center; justify-content: space-between; }
+        #current-model-select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 13px; max-width: 200px; }
         
+        /* 新增：文字模式播放按鈕樣式 */
+        .output-wrapper { position: relative; }
+        .play-btn {
+            position: absolute; bottom: 25px; right: 10px;
+            background: none; border: none; color: var(--primary-color);
+            font-size: 20px; cursor: pointer; padding: 5px;
+            opacity: 0.6; transition: opacity 0.2s;
+        }
+        .play-btn:hover { opacity: 1; transform: scale(1.1); }
+
         @media (max-width: 480px) { .text-card { padding: 20px; width: 95%; margin-top: 50px; } .mic-btn { width: 64px; height: 64px; } .custom-window { width: 85%; } }
     </style>
 </head>
@@ -100,22 +114,23 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v7.0)</h2>
-            
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v8.0)</h2>
             <div id="model-selector-container">
                 <span><i class="fas fa-microchip"></i> 使用模型:</span>
-                <select id="current-model-select" onchange="manualSelectModel()">
-                    <option value="">正在偵測...</option>
-                </select>
+                <select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select>
             </div>
-
             <div class="controls">
                 <select id="textSourceLang"></select>
                 <button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button>
                 <select id="textTargetLang"></select>
             </div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
-            <textarea id="textOutput" class="output-box" placeholder="翻譯結果..." readonly></textarea>
+            
+            <div class="output-wrapper">
+                <textarea id="textOutput" class="output-box" placeholder="翻譯結果..." readonly></textarea>
+                <button class="play-btn" onclick="playTextTranslation()" title="朗讀翻譯結果"><i class="fas fa-volume-up"></i></button>
+            </div>
+
             <button id="textTranslateBtn" class="translate-btn" onclick="doTextTranslation()">開始翻譯</button>
             <div id="textLoading" class="loading-text"><i class="fas fa-spinner fa-spin"></i> Gemini 正在思考中...</div>
         </div>
@@ -123,130 +138,173 @@
 
     <div id="voiceMirroredContainer">
         <div class="half-screen top-half">
-            <div class="lang-label"><i class="fas fa-user-friends"></i> 對方 (<span id="topLangLabel"></span>)</div>
+            <div class="lang-select-container">
+                <i class="fas fa-user-friends"></i> 對方: 
+                <select id="voiceTopLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select>
+            </div>
             <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
             <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
             <div class="mic-controls">
-                <button id="topMicBtn" class="mic-btn" onmousedown="startListening('top')" onmouseup="stopListening()" ontouchstart="startListening('top')" ontouchend="stopListening()"><i class="fas fa-microphone"></i></button>
+                <button id="topMicBtn" class="mic-btn" 
+                    onmousedown="startListening('top')" onmouseup="stopListening()" 
+                    ontouchstart="startListening('top')" ontouchend="stopListening()">
+                    <i class="fas fa-microphone"></i>
+                </button>
             </div>
         </div>
         <div class="half-screen bottom-half">
-            <div class="lang-label"><i class="fas fa-user"></i> 我方 (<span id="bottomLangLabel"></span>)</div>
+            <div class="lang-select-container">
+                <i class="fas fa-user"></i> 我方: 
+                <select id="voiceBottomLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select>
+            </div>
             <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
             <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
             <div class="mic-controls">
-                <button id="bottomMicBtn" class="mic-btn" onmousedown="startListening('bottom')" onmouseup="stopListening()" ontouchstart="startListening('bottom')" ontouchend="stopListening()"><i class="fas fa-microphone"></i></button>
+                <button id="bottomMicBtn" class="mic-btn" 
+                    onmousedown="startListening('bottom')" onmouseup="stopListening()" 
+                    ontouchstart="startListening('bottom')" ontouchend="stopListening()">
+                    <i class="fas fa-microphone"></i>
+                </button>
             </div>
         </div>
     </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script>
-    // ===== 全域變數 =====
     let userApiKey = '';
-    let selectedModel = ''; // 當前使用的模型
+    let selectedModel = ''; 
     const languages=[{name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},{name:'English',prompt:'English',speechCode:'en-US'},{name:'日本語',prompt:'Japanese',speechCode:'ja-JP'},{name:'한국어',prompt:'Korean',speechCode:'ko-KR'},{name:'Français',prompt:'French',speechCode:'fr-FR'},{name:'Español',prompt:'Spanish',speechCode:'es-ES'},{name:'Deutsch',prompt:'German',speechCode:'de-DE'},{name:'Tiếng Việt',prompt:'Vietnamese',speechCode:'vi-VN'},{name:'ภาษาไทย',prompt:'Thai',speechCode:'th-TH'}];
     let currentMode='text',recognition,isListening=false,activeMicSide=null,synth=window.speechSynthesis;
 
-    // ===== UI 工具 =====
+    // UI Tools
     function showToast(m,t='normal'){const c=document.getElementById('toast-container'),d=document.createElement('div');d.className='toast'+(t==='error'?' error':'');d.innerText=m;c.appendChild(d);requestAnimationFrame(()=>d.classList.add('show'));setTimeout(()=>{d.classList.remove('show');setTimeout(()=>d.remove(),300)},4000)}
     function openModal(id){const m=document.getElementById(id);m.style.display='flex';requestAnimationFrame(()=>m.classList.add('show'));}
     function closeModal(id){const m=document.getElementById(id);m.classList.remove('show');setTimeout(()=>m.style.display='none',300);}
 
-    // ===== Key 管理 =====
+    // API Key
     function initApiKey(){
         const k=localStorage.getItem('gemini_api_key');
-        if(k) { 
-            userApiKey=k; 
-            // 有 Key 時，自動偵測一次模型
-            setTimeout(()=>fetchAndAutoSelectModel(), 1000);
-        } else { 
-            setTimeout(()=>openSettings(),500); 
-        }
+        if(k) { userApiKey=k; setTimeout(()=>fetchAndAutoSelectModel(), 1000); } 
+        else { setTimeout(()=>openSettings(),500); }
     }
     function openSettings(){document.getElementById('apiKeyInput').value=userApiKey;openModal('settingsModal');}
     function closeSettings(){closeModal('settingsModal');}
     function saveApiKey(){const k=document.getElementById('apiKeyInput').value.trim();if(k){localStorage.setItem('gemini_api_key',k);userApiKey=k;closeModal('settingsModal');showToast("API Key 設定成功"); fetchAndAutoSelectModel();}else{showToast("請輸入 Key","error");}}
     function executeReset(){localStorage.removeItem('gemini_api_key');userApiKey='';closeModal('settingsModal');showToast("Key 已清除");setTimeout(()=>openSettings(),1000);}
 
-    // ===== v7.0 核心：自動模型偵測與選擇 =====
+    // Model Detection
     async function fetchAndAutoSelectModel() {
         if (!userApiKey) return;
         const select = document.getElementById('current-model-select');
-        select.innerHTML = '<option>偵測中...</option>';
-        select.disabled = true;
-
+        select.innerHTML = '<option>偵測中...</option>'; select.disabled = true;
         try {
-            // 1. 問 Google 你的 Key 到底有哪些模型
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${userApiKey}`);
             const data = await res.json();
+            if (!res.ok || !data.models) { select.innerHTML = '<option value="">(Key 無效)</option>'; return; }
+            
+            const availableModels = data.models.filter(m => m.supportedGenerationMethods.includes('generateContent')).map(m => m.name.replace('models/', ''));
+            if (availableModels.length === 0) { select.innerHTML = '<option value="">(無可用模型)</option>'; return; }
 
-            if (!res.ok || !data.models) {
-                // 如果連查詢都失敗，代表 API Key 本身無效或服務沒開
-                select.innerHTML = '<option value="">(Key 無效或服務未開)</option>';
-                alert("無法取得模型列表！\n請檢查您的 Key 權限，或是否啟用了 Generative Language API。");
-                return;
-            }
-
-            // 2. 過濾出支援 generateContent 的模型
-            const availableModels = data.models
-                .filter(m => m.supportedGenerationMethods.includes('generateContent'))
-                .map(m => m.name.replace('models/', '')); // 去掉前綴
-
-            if (availableModels.length === 0) {
-                select.innerHTML = '<option value="">(無可用模型)</option>';
-                alert("您的 Key 權限下找不到任何可用模型！請建立新 Key。");
-                return;
-            }
-
-            // 3. 填入下拉選單
             select.innerHTML = '';
-            // 優先排序策略：Flash > Pro > 其他
             availableModels.sort((a, b) => {
                 if (a.includes('flash') && !b.includes('flash')) return -1;
                 if (!a.includes('flash') && b.includes('flash')) return 1;
                 return 0;
             });
-
             availableModels.forEach(model => {
-                const opt = document.createElement('option');
-                opt.value = model;
-                opt.innerText = model;
-                select.appendChild(opt);
+                const opt = document.createElement('option'); opt.value = model; opt.innerText = model; select.appendChild(opt);
             });
-
             select.disabled = false;
-            
-            // 4. 自動選擇第一個 (通常是最快的 Flash)
-            selectedModel = availableModels[0];
-            select.value = selectedModel;
-            showToast(`已自動選擇: ${selectedModel}`);
-            console.log("Auto selected:", selectedModel);
-
+            selectedModel = availableModels[0]; select.value = selectedModel;
+            showToast(`已選擇: ${selectedModel}`);
         } catch (e) {
-            console.error(e);
-            select.innerHTML = '<option value="gemini-1.5-flash">預設(Gemini 1.5 Flash)</option>';
-            selectedModel = 'gemini-1.5-flash'; // 網路錯誤時的保底
-            showToast("偵測失敗，使用預設值", "error");
+            select.innerHTML = '<option value="gemini-1.5-flash">預設(1.5 Flash)</option>'; selectedModel = 'gemini-1.5-flash';
+        }
+    }
+    function manualSelectModel() { selectedModel = document.getElementById('current-model-select').value; showToast(`已切換: ${selectedModel}`); }
+
+    // Init
+    window.onload=()=>{initApiKey();initLanguageSelects();checkSpeechSupport();};
+    
+    // 初始化語言選單 (包含文字模式和語音模式)
+    function initLanguageSelects(){
+        const ids = ['textSourceLang', 'textTargetLang', 'voiceTopLang', 'voiceBottomLang'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            el.innerHTML = ''; // Clear first
+            languages.forEach((l,i)=>{ el.add(new Option(l.name,i)); });
+        });
+        
+        // 預設值
+        document.getElementById('textSourceLang').selectedIndex = 0; // 中
+        document.getElementById('textTargetLang').selectedIndex = 1; // 英
+        
+        // 語音模式預設：上方(對方)為英文，下方(我方)為中文
+        document.getElementById('voiceTopLang').selectedIndex = 1; 
+        document.getElementById('voiceBottomLang').selectedIndex = 0; 
+    }
+
+    // 同步邏輯 (可選)：目前讓它們獨立運作，比較符合使用者需求
+    function syncLanguages(source) {
+        // 如果需要同步，可以在這裡寫邏輯。目前保持獨立。
+    }
+
+    function checkSpeechSupport(){
+        if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
+            showToast("請用 Chrome","error");document.getElementById('voiceModeBtn').disabled=true;
+        }else{
+            const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+            recognition=new SR();
+            recognition.continuous=true; // 改為 true 以便支援長按
+            recognition.interimResults=true;
+            
+            recognition.onstart=()=>{ isListening=true; updateMicUI(true); };
+            
+            recognition.onresult=(e)=>{
+                let interim = '';
+                let final = '';
+                for(let i=e.resultIndex;i<e.results.length;++i){
+                    if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+                    else interim+=e.results[i][0].transcript;
+                }
+                const id=activeMicSide==='top'?'topOriginalText':'bottomOriginalText';
+                document.getElementById(id).innerText = final || interim || '...';
+                
+                // 這裡我們不自動 stop，而是等待使用者放開按鈕
+                // 但為了即時翻譯體驗，我們可以暫存 final 結果
+                if(final) {
+                    window.lastFinalTranscript = final;
+                }
+            };
+            
+            recognition.onerror=(e)=>{ 
+                console.error(e); 
+                // 如果是 no-speech 錯誤，忽略它，只要使用者還按著
+                if(e.error !== 'no-speech') {
+                    stopListening(); 
+                }
+            };
+            recognition.onend=()=>{ 
+                isListening=false; 
+                updateMicUI(false); 
+                
+                // 語音結束時，如果有最終結果，進行翻譯
+                if(window.lastFinalTranscript && activeMicSide) {
+                    doVoiceTranslation(window.lastFinalTranscript, activeMicSide);
+                    window.lastFinalTranscript = ''; // 清空
+                }
+            };
         }
     }
 
-    function manualSelectModel() {
-        const select = document.getElementById('current-model-select');
-        selectedModel = select.value;
-        showToast(`已切換模型為: ${selectedModel}`);
-    }
+    function switchMode(m){currentMode=m;document.getElementById('textModeBtn').classList.toggle('active',m==='text');document.getElementById('voiceModeBtn').classList.toggle('active',m==='voice');document.getElementById('textModeContainer').style.display=m==='text'?'flex':'none';document.getElementById('voiceMirroredContainer').style.display=m==='voice'?'flex':'none';}
 
-    // ===== 翻譯核心 (使用動態選擇的模型) =====
+    // API Call
     async function callGeminiAPI(text, sP, tP) {
         if(!userApiKey){showToast("請設定 Key","error");openSettings();throw new Error("No Key");}
-        if(!selectedModel) {
-            // 如果還沒選好模型，嘗試再抓一次，或用保底
-            selectedModel = 'gemini-1.5-flash'; 
-        }
+        if(!selectedModel) selectedModel = 'gemini-1.5-flash';
 
         const prompt=`You are a professional translator. Translate from ${sP} to ${tP}. Only output the translated text. Text: "${text}"`;
-
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${userApiKey}`,{
                 method:'POST',headers:{'Content-Type':'application/json'},
@@ -258,40 +316,106 @@
                 if(data.candidates) return data.candidates[0].content.parts[0].text.trim();
             } 
             
-            // 錯誤處理
             const err = await res.json();
             let msg = err.error ? err.error.message : "未知錯誤";
-
-            // 如果遇到 Quota 0，建議用戶切換
-            if (msg.includes("Quota exceeded") || msg.includes("limit: 0")) {
-                alert(`模型 ${selectedModel} 額度不足 (Quota: 0)！\n請嘗試在下拉選單切換其他模型 (例如 gemini-pro 或 1.0)。`);
-            } else if (msg.includes("not found")) {
-                alert(`模型 ${selectedModel} 權限不足或不存在！\n請嘗試切換其他模型。`);
-            }
-
             showToast("翻譯失敗", "error");
             return `[系統訊息] 錯誤: ${msg}`;
-                
         } catch(e) {
-            console.error(e);
-            showToast("連線錯誤", "error");
-            return `[連線失敗] ${e.message}`;
+            console.error(e); showToast("連線錯誤", "error"); return `[連線失敗] ${e.message}`;
         }
     }
 
-    // ===== 初始化與介面邏輯 (保持不變) =====
-    window.onload=()=>{initApiKey();initLanguageSelects();updateVoiceLabels();checkSpeechSupport();};
-    function initLanguageSelects(){const s=document.getElementById('textSourceLang'),t=document.getElementById('textTargetLang');languages.forEach((l,i)=>{s.add(new Option(l.name,i));t.add(new Option(l.name,i))});s.selectedIndex=0;t.selectedIndex=1;}
-    function checkSpeechSupport(){if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){showToast("請用 Chrome","error");document.getElementById('voiceModeBtn').disabled=true;}else{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new SR();recognition.continuous=false;recognition.interimResults=true;recognition.onstart=()=>{isListening=true;updateMicUI(true)};recognition.onresult=(e)=>{let f='';for(let i=e.resultIndex;i<e.results.length;++i)if(e.results[i].isFinal)f+=e.results[i][0].transcript;const id=activeMicSide==='top'?'topOriginalText':'bottomOriginalText';document.getElementById(id).innerText=f||'...';if(f){stopListening();doVoiceTranslation(f,activeMicSide)}};recognition.onerror=(e)=>{stopListening();console.error(e)};recognition.onend=()=>{stopListening()}}}
-    function switchMode(m){currentMode=m;document.getElementById('textModeBtn').classList.toggle('active',m==='text');document.getElementById('voiceModeBtn').classList.toggle('active',m==='voice');document.getElementById('textModeContainer').style.display=m==='text'?'flex':'none';document.getElementById('voiceMirroredContainer').style.display=m==='voice'?'flex':'none';if(m==='voice')updateVoiceLabels();}
-    function updateVoiceLabels(){const s=document.getElementById('textSourceLang').value,t=document.getElementById('textTargetLang').value;document.getElementById('bottomLangLabel').innerText=languages[s].name;document.getElementById('topLangLabel').innerText=languages[t].name;}
-    async function doTextTranslation(){const i=document.getElementById('textInput'),o=document.getElementById('textOutput'),b=document.getElementById('textTranslateBtn'),l=document.getElementById('textLoading');if(!i.value.trim())return;b.disabled=true;l.style.display='block';o.value='';const s=document.getElementById('textSourceLang').value,t=document.getElementById('textTargetLang').value;try{o.value=await callGeminiAPI(i.value,languages[s].prompt,languages[t].prompt)}catch(e){o.value="Error"}finally{b.disabled=false;l.style.display='none'}}
-    function swapTextLanguages(){const s=document.getElementById('textSourceLang'),t=document.getElementById('textTargetLang');[s.value,t.value]=[t.value,s.value];const i=document.getElementById('textInput'),o=document.getElementById('textOutput');if(o.value){i.value=o.value;o.value=''}}
-    function startListening(s){if(isListening||!recognition)return;activeMicSide=s;const sI=document.getElementById('textSourceLang').value,tI=document.getElementById('textTargetLang').value;recognition.lang=s==='top'?languages[tI].speechCode:languages[sI].speechCode;document.getElementById(s+'OriginalText').innerText='...';document.getElementById((s==='top'?'bottom':'top')+'TranslatedText').innerText='...';recognition.start()}
-    function stopListening(){if(recognition)recognition.stop();isListening=false;updateMicUI(false)}
-    function updateMicUI(l){document.getElementById('topMicBtn').classList.toggle('listening',l&&activeMicSide==='top');document.getElementById('bottomMicBtn').classList.toggle('listening',l&&activeMicSide==='bottom')}
-    async function doVoiceTranslation(t,s){const sI=document.getElementById('textSourceLang').value,tI=document.getElementById('textTargetLang').value;let sP,tP,out,lang;if(s==='top'){sP=languages[tI].prompt;tP=languages[sI].prompt;out='bottomTranslatedText';lang=languages[sI].speechCode}else{sP=languages[sI].prompt;tP=languages[tI].prompt;out='topTranslatedText';lang=languages[tI].speechCode}const r=await callGeminiAPI(t,sP,tP);document.getElementById(out).innerText=r;if(!r.startsWith("["))speakText(r,lang)}
-    function speakText(t,l){if(!synth)return;synth.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=l;const v=synth.getVoices().find(v=>v.lang===l&&(v.name.includes('Google')||v.name.includes('Siri')));if(v)u.voice=v;synth.speak(u)}if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=()=>{};
+    // Text Mode Logic
+    async function doTextTranslation(){
+        const i=document.getElementById('textInput'),o=document.getElementById('textOutput'),b=document.getElementById('textTranslateBtn'),l=document.getElementById('textLoading');
+        if(!i.value.trim())return;
+        b.disabled=true;l.style.display='block';o.value='';
+        const s=document.getElementById('textSourceLang').value,t=document.getElementById('textTargetLang').value;
+        try{ o.value=await callGeminiAPI(i.value,languages[s].prompt,languages[t].prompt); } 
+        catch(e){ o.value="Error"; } 
+        finally{ b.disabled=false;l.style.display='none'; }
+    }
+    
+    function swapTextLanguages(){
+        const s=document.getElementById('textSourceLang'),t=document.getElementById('textTargetLang');
+        [s.value,t.value]=[t.value,s.value];
+        const i=document.getElementById('textInput'),o=document.getElementById('textOutput');
+        if(o.value){i.value=o.value;o.value='';}
+    }
+
+    // 新增：文字模式播放功能
+    function playTextTranslation() {
+        const text = document.getElementById('textOutput').value;
+        const targetLangIdx = document.getElementById('textTargetLang').value;
+        if(text) {
+            speakText(text, languages[targetLangIdx].speechCode);
+        } else {
+            showToast("沒有可播放的文字");
+        }
+    }
+
+    // Voice Mode Logic (PTT)
+    function startListening(side){
+        if(isListening) return; // 避免重複觸發
+        activeMicSide=side;
+        window.lastFinalTranscript = ''; // 重置暫存
+        
+        // 讀取語音模式專用的下拉選單
+        const topIdx = document.getElementById('voiceTopLang').value;
+        const bottomIdx = document.getElementById('voiceBottomLang').value;
+        
+        // 如果是 Top (對方) 說話，辨識語言就是 Top 的語言
+        // 如果是 Bottom (我方) 說話，辨識語言就是 Bottom 的語言
+        recognition.lang = (side === 'top') ? languages[topIdx].speechCode : languages[bottomIdx].speechCode;
+        
+        document.getElementById(side+'OriginalText').innerText='...';
+        document.getElementById((side==='top'?'bottom':'top')+'TranslatedText').innerText='...';
+        
+        try { recognition.start(); } catch(e) { console.error(e); }
+    }
+    
+    function stopListening(){
+        if(recognition) recognition.stop();
+        // 停止後，onend 會觸發並處理翻譯
+    }
+    
+    function updateMicUI(l){
+        document.getElementById('topMicBtn').classList.toggle('listening',l&&activeMicSide==='top');
+        document.getElementById('bottomMicBtn').classList.toggle('listening',l&&activeMicSide==='bottom');
+    }
+    
+    async function doVoiceTranslation(text, side){
+        const topIdx = document.getElementById('voiceTopLang').value;
+        const bottomIdx = document.getElementById('voiceBottomLang').value;
+        
+        let sP, tP, out, speechLang;
+        
+        if(side==='top'){ 
+            // 對方說話 (Top) -> 翻譯成 我方語言 (Bottom)
+            sP=languages[topIdx].prompt; 
+            tP=languages[bottomIdx].prompt; 
+            out='bottomTranslatedText'; 
+            speechLang=languages[bottomIdx].speechCode; 
+        } else { 
+            // 我方說話 (Bottom) -> 翻譯成 對方語言 (Top)
+            sP=languages[bottomIdx].prompt; 
+            tP=languages[topIdx].prompt; 
+            out='topTranslatedText'; 
+            speechLang=languages[topIdx].speechCode; 
+        }
+        
+        const r=await callGeminiAPI(text, sP, tP);
+        document.getElementById(out).innerText=r;
+        if(!r.startsWith("[")) speakText(r, speechLang);
+    }
+    
+    function speakText(t,l){
+        if(!synth)return;synth.cancel();
+        const u=new SpeechSynthesisUtterance(t);u.lang=l;
+        const v=synth.getVoices().find(v=>v.lang===l&&(v.name.includes('Google')||v.name.includes('Siri')));
+        if(v)u.voice=v;synth.speak(u);
+    }
+    if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=()=>{};
 </script>
 </body>
 </html>
