@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v32.0)</title>
+    <title>AI 智能翻譯機 (v33.0 語音回放修正)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* ================= 全域設定 ================= */
@@ -210,7 +210,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v32.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v33.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -306,13 +306,21 @@
         setupTextPlayback();
     };
     
+    // v33.0: 修正語音回放邏輯 - 依據所在的區域來決定語言
     function setupTextPlayback() {
+        // Top Half bubbles -> Use Top Dropdown Language
+        // Bottom Half bubbles -> Use Bottom Dropdown Language
+        
         const bubbles = [
+            // Top Half
             {id: 'topOriginalText', getLangIdx: () => document.getElementById('voiceTopLang').value},
-            {id: 'topTranslatedText', getLangIdx: () => document.getElementById('voiceBottomLang').value},
+            {id: 'topTranslatedText', getLangIdx: () => document.getElementById('voiceTopLang').value}, // Fixed: Now uses Top Lang
+            
+            // Bottom Half
             {id: 'bottomOriginalText', getLangIdx: () => document.getElementById('voiceBottomLang').value},
-            {id: 'bottomTranslatedText', getLangIdx: () => document.getElementById('voiceTopLang').value}
+            {id: 'bottomTranslatedText', getLangIdx: () => document.getElementById('voiceBottomLang').value} // Fixed: Now uses Bottom Lang
         ];
+
         bubbles.forEach(item => {
             const el = document.getElementById(item.id);
             el.addEventListener('click', (e) => {
@@ -541,7 +549,6 @@
     function playTextTranslation() { const text = document.getElementById('textOutput').value; const targetLangIdx = document.getElementById('textTargetLang').value; if(text) { speakText(text, languages[targetLangIdx].speechCode); } else { showToast("沒有可播放的文字"); } }
 
     function startListening(side){
-        if(synth) synth.cancel();
         if(isListening) return;
         
         if (isIOS) {
@@ -565,7 +572,6 @@
         catch(e) { 
             console.warn("Start error:", e); 
             if(e.name !== 'InvalidStateError') { 
-                // 失敗才還原
                 isListening = false; updateMicUI(false); 
             } 
         }
@@ -595,7 +601,7 @@
         if (voices.length === 0) { setTimeout(() => speakText(t, l), 100); return; }
         const u = new SpeechSynthesisUtterance(t); 
         u.lang = l;
-        u.rate = 1.0; // v32.0 Force normal speed
+        u.rate = 1.0; 
         let v = voices.find(voice => voice.lang === l);
         if (!v) { const shortLang = l.split('-')[0]; v = voices.find(voice => voice.lang.startsWith(shortLang)); }
         if (!v) { const langNameMap = { 'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea' }; const shortLang = l.split('-')[0]; const keyword = langNameMap[shortLang]; if (keyword) { v = voices.find(voice => voice.name.toLowerCase().includes(keyword)); } }
