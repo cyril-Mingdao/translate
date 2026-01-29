@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v10.0 語音修正版)</title>
+    <title>AI 智能翻譯機 (v11.0 語音引導版)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* CSS 樣式完全維持不變 */
@@ -88,7 +88,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v10.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v11.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -126,7 +126,13 @@
     const languages=[{name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},{name:'English',prompt:'English',speechCode:'en-US'},{name:'日本語',prompt:'Japanese',speechCode:'ja-JP'},{name:'한국어',prompt:'Korean',speechCode:'ko-KR'},{name:'Français',prompt:'French',speechCode:'fr-FR'},{name:'Español',prompt:'Spanish',speechCode:'es-ES'},{name:'Deutsch',prompt:'German',speechCode:'de-DE'},{name:'Tiếng Việt',prompt:'Vietnamese',speechCode:'vi-VN'},{name:'ภาษาไทย',prompt:'Thai',speechCode:'th-TH'}];
     let currentMode='text',recognition,isListening=false,activeMicSide=null,synth=window.speechSynthesis;
 
-    function showToast(m,t='normal'){const c=document.getElementById('toast-container'),d=document.createElement('div');d.className='toast'+(t==='error'?' error':'');d.innerText=m;c.appendChild(d);requestAnimationFrame(()=>d.classList.add('show'));setTimeout(()=>{d.classList.remove('show');setTimeout(()=>d.remove(),300)},4000)}
+    // 修改：showToast 支援 HTML
+    function showToast(m,t='normal'){
+        const c=document.getElementById('toast-container'),d=document.createElement('div');
+        d.className='toast'+(t==='error'?' error':'');
+        d.innerHTML=m; // 改為 innerHTML 以支援連結
+        c.appendChild(d);requestAnimationFrame(()=>d.classList.add('show'));setTimeout(()=>{d.classList.remove('show');setTimeout(()=>d.remove(),300)},6000); // 延長顯示時間方便點擊
+    }
     function openModal(id){const m=document.getElementById(id);m.style.display='flex';requestAnimationFrame(()=>m.classList.add('show'));}
     function closeModal(id){const m=document.getElementById(id);m.classList.remove('show');setTimeout(()=>m.style.display='none',300);}
 
@@ -228,19 +234,14 @@
     }
 
     // ==========================================
-    // 關鍵修正：語音合成邏輯 (v10.0)
+    // 關鍵修正：語音合成邏輯 + 安裝教學連結 (v11.0)
     // ==========================================
     function speakText(t, l) {
         if (!synth) return;
         synth.cancel();
 
-        // 確保語音列表已載入
         const voices = synth.getVoices();
-        if (voices.length === 0) {
-            // Chrome 需要一些時間加載語音
-            setTimeout(() => speakText(t, l), 100);
-            return;
-        }
+        if (voices.length === 0) { setTimeout(() => speakText(t, l), 100); return; }
 
         const u = new SpeechSynthesisUtterance(t);
         u.lang = l;
@@ -248,20 +249,17 @@
         // 1. 精準匹配 (語言代碼)
         let v = voices.find(voice => voice.lang === l);
 
-        // 2. 寬鬆匹配 (語言前綴，如 vi 匹配 vi-VN)
+        // 2. 寬鬆匹配 (語言前綴)
         if (!v) {
             const shortLang = l.split('-')[0];
             v = voices.find(voice => voice.lang.startsWith(shortLang));
         }
 
-        // 3. 關鍵字暴力匹配 (針對越南語/泰語等特殊情況)
+        // 3. 關鍵字暴力匹配
         if (!v) {
-            // 嘗試從名稱中尋找 (例如 "Vietnamese", "Thai")
-            // 這邊做個簡單映射
             const langNameMap = { 'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea' };
             const shortLang = l.split('-')[0];
             const keyword = langNameMap[shortLang];
-            
             if (keyword) {
                 v = voices.find(voice => voice.name.toLowerCase().includes(keyword));
             }
@@ -269,22 +267,20 @@
 
         if (v) {
             u.voice = v;
-            console.log("使用語音:", v.name);
         } else {
             console.warn("找不到語音，使用系統預設:", l);
-            // 如果連暴力匹配都找不到，還是會嘗試播放 (依賴瀏覽器 fallback)
-            // 但我們可以給用戶一個提示
+            // 4. 如果連暴力匹配都找不到，提供安裝連結
             if(l.includes('vi') || l.includes('th')) {
-               showToast("您的設備未安裝該語言語音包", "normal");
+               const helpUrl = "https://www.google.com/search?q=install+text+to+speech+voice+" + l;
+               showToast(`未安裝該語言語音包 <a href="${helpUrl}" target="_blank" style="color:#80dfff;text-decoration:underline;margin-left:5px;">點此安裝教學 &rarr;</a>`, "normal");
             }
         }
 
         synth.speak(u);
     }
     
-    // 確保語音列表載入觸發
     if(speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = () => { /* 語音列表更新 */ };
+        speechSynthesis.onvoiceschanged = () => { };
     }
 </script>
 </body>
