@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v23.0)</title>
+    <title>AI 智能翻譯機 (v24.0 iOS 完美版)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* ================= 全域設定 ================= */
@@ -83,12 +83,15 @@
         #voiceMirroredContainer { display: none; flex-direction: column; height: 100%; width: 100%; background: #fff; overflow: hidden; }
         .half-screen { display: flex; flex-direction: column; padding: 20px; overflow-y: hidden; position: relative; }
         
+        /* v24.0 分隔線位置微調: 
+           v23.0 是 50% + 5px
+           v24.0 請求向上 2.5px -> (50% + 5px) - 2.5px = 50% + 2.5px
+        */
         .top-half { 
             background-color: var(--mirrored-bg-top); 
             transform: rotate(180deg); 
             border-bottom: 1px solid #ccdcee; 
-            /* v23.0 修正：中心點向下5px (所以上方高度變大，是 50% + 5px) */
-            height: calc(50% + 5px); 
+            height: calc(50% + 2.5px); 
             flex: none; 
             min-height: 20%; max-height: 80%; 
         }
@@ -118,7 +121,9 @@
         .speech-bubble.translated { background: #fff; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         .bottom-half .speech-bubble.translated { border-color: var(--secondary-color); color: var(--secondary-color); }
         
-        /* 麥克風樣式 */
+        /* v24.0 麥克風樣式: 對稱且防溢出 
+           使用 padding-bottom + env(safe-area-inset-bottom) 確保不被 iPhone 橫條遮擋
+        */
         .mic-btn { 
             position: absolute; width: 75px; height: 75px; border-radius: 50%; border: none; 
             background-color: var(--primary-color); color: white; font-size: 32px; 
@@ -128,8 +133,21 @@
             left: 50%; transform: translateX(-50%); 
         }
         .mic-btn:active { cursor: grabbing; }
-        #topMicBtn { top: auto; bottom: 30px; }
-        #bottomMicBtn { top: auto; bottom: 30px; background-color: var(--secondary-color); box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4); }
+        
+        /* 對方(上)：考慮頂部安全區域 (瀏海) */
+        #topMicBtn { 
+            top: auto; 
+            bottom: calc(20px + env(safe-area-inset-top)); 
+        }
+        
+        /* 我方(下)：考慮底部安全區域 (Home Bar) */
+        #bottomMicBtn { 
+            top: auto; 
+            bottom: calc(20px + env(safe-area-inset-bottom)); 
+            background-color: var(--secondary-color); 
+            box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4); 
+        }
+        
         .mic-btn.listening { animation: pulse 1.5s infinite; background-color: var(--danger-color) !important; box-shadow: 0 6px 20px rgba(217, 48, 37, 0.4); }
         @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); } }
 
@@ -164,7 +182,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v23.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v24.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -289,8 +307,8 @@
         window.addEventListener('touchend', onEnd);
         
         if (document.body.classList.contains('voice-mode-portrait')) {
-             // v23.0 修正：初始位置 = (50% + 5px) + 20px margin
-             headerControls.style.top = `calc(50% + 5px + 20px)`;
+             // v24.0: (50% + 2.5px) + 20px
+             headerControls.style.top = `calc(50% + 2.5px + 20px)`;
         }
     }
 
@@ -299,9 +317,8 @@
         const isVoice = currentMode === 'voice';
         if (isPortrait && isVoice) { 
             document.body.classList.add('voice-mode-portrait'); 
-            // v23.0 修正：預設高度 50% + 5px
-            const topHalfHeight = document.getElementById('topHalf').style.height || 'calc(50% + 5px)';
-            if(topHalfHeight.includes('calc')) { document.getElementById('headerControls').style.top = 'calc(50% + 25px)'; } 
+            const topHalfHeight = document.getElementById('topHalf').style.height || 'calc(50% + 2.5px)';
+            if(topHalfHeight.includes('calc')) { document.getElementById('headerControls').style.top = 'calc(50% + 22.5px)'; } 
             else { document.getElementById('headerControls').style.top = `calc(${topHalfHeight} + 20px)`; }
         } 
         else { 
@@ -323,14 +340,26 @@
             const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
             recognition=new SR(); 
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            
+            // v24.0 Fix: iOS Fallback Variables
             recognition.continuous = !isIOS; 
             recognition.interimResults = true;
-            recognition.onstart=()=>{ isListening=true; updateMicUI(true); };
+            window.lastInterimTranscript = ''; // Reset interim storage
+
+            recognition.onstart=()=>{ isListening=true; updateMicUI(true); window.lastInterimTranscript = ''; };
+            
             recognition.onresult=(e)=>{
                 let interim = '', final = '';
-                for(let i=e.resultIndex;i<e.results.length;++i){ if(e.results[i].isFinal) final+=e.results[i][0].transcript; else interim+=e.results[i][0].transcript; }
+                for(let i=e.resultIndex;i<e.results.length;++i){ 
+                    if(e.results[i].isFinal) final+=e.results[i][0].transcript; 
+                    else interim+=e.results[i][0].transcript; 
+                }
                 const id=activeMicSide==='top'?'topOriginalText':'bottomOriginalText'; document.getElementById(id).innerText = final || interim || '...';
+                
                 if(final) window.lastFinalTranscript = final;
+                
+                // v24.0 Fix: Store interim for iOS fallback
+                if(interim) window.lastInterimTranscript = interim; 
             };
             
             recognition.onerror=(e)=>{ 
@@ -341,7 +370,20 @@
             
             recognition.onend=()=>{ 
                 isListening=false; updateMicUI(false); 
-                if(window.lastFinalTranscript && activeMicSide) { doVoiceTranslation(window.lastFinalTranscript, activeMicSide); window.lastFinalTranscript = ''; } 
+                
+                let textToTranslate = window.lastFinalTranscript;
+                
+                // v24.0 Fix: iOS Rescue Logic
+                if (!textToTranslate && isIOS && window.lastInterimTranscript) {
+                    console.log("iOS Fallback triggered with:", window.lastInterimTranscript);
+                    textToTranslate = window.lastInterimTranscript;
+                }
+
+                if(textToTranslate && activeMicSide) { 
+                    doVoiceTranslation(textToTranslate, activeMicSide); 
+                    window.lastFinalTranscript = ''; 
+                    window.lastInterimTranscript = '';
+                } 
             };
         }
     }
