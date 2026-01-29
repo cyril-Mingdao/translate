@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 雙向智能翻譯機 (v3.4)</title>
+    <title>AI 雙向智能翻譯機 (v3.5 終極版)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* CSS 保持不變 */
+        /* CSS 樣式保持不變 */
         :root { --primary-color: #4285F4; --secondary-color: #34A853; --danger-color: #d93025; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #333; --mirrored-bg-top: #e8f0fe; --mirrored-bg-bottom: #e6f4ea; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Roboto', Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; color: var(--text-color); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -105,7 +105,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v3.4)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v3.5)</h2>
             <div class="controls">
                 <select id="textSourceLang"></select>
                 <button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button>
@@ -224,13 +224,10 @@
     }
 
     // ==========================================
-    // 關鍵修正：確保模型為 gemini-1.5-flash
+    // 關鍵修正：自動輪詢模型的邏輯
     // ==========================================
     async function callGeminiAPI(text, sourceLangPrompt, targetLangPrompt) {
         if (!userApiKey) { showToast("請先設定 API Key", "error"); openSettings(); throw new Error("No API Key"); }
-        
-        // 確保這裡不是 gemini-pro，而是 gemini-1.5-flash
-        const modelName = 'gemini-1.5-flash';
 
         const prompt = `
             You are a professional simultaneous interpreter. 
@@ -239,34 +236,60 @@
             Text: "${text}"
         `;
 
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
+        // 這裡定義我們要嘗試的模型列表，依優先順序
+        // Google有時候會改別名，一次試完最保險
+        const modelsToTry = [
+            'gemini-1.5-flash',       // 標準名
+            'gemini-1.5-flash-latest',// 別名
+            'gemini-1.5-flash-001',   // 具體版號
+            'gemini-pro'              // 最後手段
+        ];
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("API Error:", errorData);
-                
-                let msg = `Error ${response.status}`;
-                if (errorData.error && errorData.error.message) {
-                     msg += `: ${errorData.error.message}`;
-                     if(response.status === 403) msg = "權限被拒 (403)。請檢查 API Key 是否限制了 Referrer？";
+        let lastError = null;
+
+        // 迴圈嘗試所有模型
+        for (const modelName of modelsToTry) {
+            try {
+                // console.log(`嘗試模型: ${modelName}`); // 除錯用
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0].content) {
+                        return data.candidates[0].content.parts[0].text.trim();
+                    }
+                } else {
+                    // 如果失敗，記錄錯誤但繼續迴圈
+                    const errorData = await response.json();
+                    lastError = errorData;
+                    // 如果是 403 (權限錯誤)，通常換模型也沒用，直接拋出
+                    if (response.status === 403) throw new Error("403 Forbidden");
                 }
-                showToast("翻譯失敗", "error");
-                // 這裡會明確顯示是哪個模型失敗
-                return `[系統訊息] 模型 ${modelName} 失敗: ${msg}`;
+            } catch (e) {
+                // 網路錯誤等，記錄下來
+                lastError = e;
+                if (e.message === "403 Forbidden") break; // 權限被拒不用試了
             }
-
-            const data = await response.json();
-            if (data.candidates && data.candidates[0].content) {
-                return data.candidates[0].content.parts[0].text.trim();
-            } else throw new Error("Format Error");
-        } catch (error) {
-            console.error(error); showToast("連線錯誤", "error"); return `[系統訊息] 連線失敗: ${error.message}`;
         }
+
+        // 如果跑到這裡代表全部失敗
+        console.error("All models failed. Last error:", lastError);
+        
+        let msg = "無法連接翻譯服務";
+        if (lastError && lastError.error) {
+            msg = `API 錯誤: ${lastError.error.message}`;
+            if (msg.includes("API key not valid")) msg = "API Key 無效";
+            if (msg.includes("Permission denied") || msg.includes("403")) msg = "權限被拒：請檢查 GitHub 網址限制 (Referrer)";
+        } else if (lastError && lastError.message) {
+            msg = lastError.message;
+        }
+
+        showToast("翻譯失敗", "error");
+        return `[系統訊息] ${msg}`;
     }
 
     async function doTextTranslation() {
