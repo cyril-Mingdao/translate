@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v44.0 麥克風終極修復)</title>
+    <title>AI 智能翻譯機 (v41.0 部署修復版)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -147,34 +147,31 @@
         .lang-select-container { font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start; }
         .voice-lang-select { border: none; background: transparent; font-size: 16px; font-weight: bold; color: #333; cursor: pointer; appearance: none; border-bottom: 1px dashed #999; width: auto; min-width: auto; flex: none; }
         
-        .bubble-wrapper {
-            position: relative;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
+        .bubble-wrapper { position: relative; margin-bottom: 10px; }
         .speech-bubble { 
             background: white; padding: 15px; border-radius: 18px; font-size: 18px; 
             min-height: 50px; height: auto; max-height: 40vh; overflow-y: auto; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.03); word-break: break-word; line-height: 1.4; border: 1px solid rgba(0,0,0,0.05);
             cursor: pointer; 
-            -webkit-user-select: text; user-select: text;
-            padding-right: 35px;
-            margin-bottom: 0;
+            /* 翻譯文字允許選取/複製 */
+            -webkit-user-select: text; 
+            user-select: text;
         }
         .speech-bubble:active { transform: scale(0.98); background: #f0f0f0; transition: transform 0.1s; } 
 
         .speech-bubble.translated { background: #fff; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         .bottom-half .speech-bubble.translated { border-color: var(--secondary-color); color: var(--secondary-color); }
         
-        .copy-btn-bubble {
-            position: absolute; right: 8px; bottom: 8px;
-            background: rgba(255,255,255,0.8); border: none; color: #aaa;
-            font-size: 14px; padding: 5px; cursor: pointer; border-radius: 5px;
-            transition: all 0.2s; z-index: 10; pointer-events: auto;
+        /* 複製按鈕樣式 */
+        .copy-btn {
+            position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.8);
+            border: none; border-radius: 50%; width: 30px; height: 30px; color: #888;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10;
         }
-        .copy-btn-bubble:hover { color: var(--primary-color); background: #f0f8ff; transform: scale(1.1); }
-        .copy-btn-bubble:active { transform: scale(0.95); }
+        .copy-btn:hover { color: var(--primary-color); background: #fff; transform: scale(1.1); }
+        .copy-btn:active { transform: scale(0.9); }
 
         /* 麥克風樣式 */
         .mic-btn { 
@@ -188,6 +185,7 @@
         }
         .mic-btn:active { cursor: grabbing; }
         
+        /* 麥克風距離分隔線 220px */
         #topMicBtn { 
             top: 220px; 
             bottom: auto; 
@@ -234,7 +232,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v44.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v41.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -250,33 +248,29 @@
 
     <div id="voiceMirroredContainer">
         <div class="half-screen top-half" id="topHalf">
-            <button id="topMicBtn" class="mic-btn" oncontextmenu="return false;"><i class="fas fa-microphone"></i></button>
+            <button id="topMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user-friends"></i> 對方: <select id="voiceTopLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            
             <div class="bubble-wrapper">
                 <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-                <button class="copy-btn-bubble" onclick="copyText('topOriginalText')"><i class="far fa-copy"></i></button>
+                <button class="copy-btn" onclick="copyToClipboard('topOriginalText')" title="複製文字"><i class="far fa-copy"></i></button>
             </div>
             <div class="bubble-wrapper">
                 <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
-                <button class="copy-btn-bubble" onclick="copyText('topTranslatedText')"><i class="far fa-copy"></i></button>
+                <button class="copy-btn" onclick="copyToClipboard('topTranslatedText')" title="複製文字"><i class="far fa-copy"></i></button>
             </div>
-
         </div>
         <div id="splitter"></div>
         <div class="half-screen bottom-half">
-            <button id="bottomMicBtn" class="mic-btn" oncontextmenu="return false;"><i class="fas fa-microphone"></i></button>
+            <button id="bottomMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user"></i> 我方: <select id="voiceBottomLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            
             <div class="bubble-wrapper">
                 <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-                <button class="copy-btn-bubble" onclick="copyText('bottomOriginalText')"><i class="far fa-copy"></i></button>
+                <button class="copy-btn" onclick="copyToClipboard('bottomOriginalText')" title="複製文字"><i class="far fa-copy"></i></button>
             </div>
             <div class="bubble-wrapper">
                 <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
-                <button class="copy-btn-bubble" onclick="copyText('bottomTranslatedText')"><i class="far fa-copy"></i></button>
+                <button class="copy-btn" onclick="copyToClipboard('bottomTranslatedText')" title="複製文字"><i class="far fa-copy"></i></button>
             </div>
-
         </div>
     </div>
 
@@ -350,6 +344,7 @@
         initSplitter();
         setupTextPlayback();
         
+        // Enter Key Support
         document.getElementById('textInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault(); 
@@ -358,42 +353,6 @@
         });
     };
     
-    function copyText(elementId) {
-        const text = document.getElementById(elementId).innerText;
-        if (!text || text === '...' || text === '聆聽中...' || text === '翻譯結果...') {
-            showToast("沒有文字可複製");
-            return;
-        }
-        
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("已複製到剪貼簿");
-            }).catch(err => {
-                console.error('Async: Could not copy text: ', err);
-                fallbackCopyText(text);
-            });
-        } else {
-            fallbackCopyText(text);
-        }
-    }
-
-    function fallbackCopyText(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            showToast("已複製到剪貼簿");
-        } catch (err) {
-            console.error('Fallback: Oops, unable to copy', err);
-            showToast("複製失敗", "error");
-        }
-        document.body.removeChild(textArea);
-    }
-
     function setupTextPlayback() {
         const bubbles = [
             {id: 'topOriginalText', getLangIdx: () => document.getElementById('voiceTopLang').value},
@@ -413,6 +372,20 @@
                     speakText(text, langCode);
                 }
             });
+        });
+    }
+
+    // 複製文字功能
+    function copyToClipboard(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        if (!text || text === '...') {
+            showToast("沒有文字可複製");
+            return;
+        }
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("已複製到剪貼簿");
+        }).catch(err => {
+            showToast("複製失敗", "error");
         });
     }
 
@@ -538,90 +511,62 @@
         handleResize();
     }
 
-    // v44.0: Fixed Button Logic (No drag-stop)
     function initDraggableMic(btnId, side) {
         const btn = document.getElementById(btnId);
         let startX, startY, startLeft, startTop;
         let isDragging = false;
+        let dragThreshold = 10;
         let isPressing = false;
 
-        // --- Touch Events (Mobile) ---
-        const handleTouchStart = (e) => {
-            e.preventDefault(); // Critical for iOS: Stop mouse emulation
-            if(synth) { synth.cancel(); const empty = new SpeechSynthesisUtterance(" "); empty.volume = 0; empty.duration = 0.1; synth.speak(empty); }
-            
-            const touch = e.touches[0];
-            startX = touch.clientX; startY = touch.clientY;
-            startLeft = btn.offsetLeft; startTop = btn.offsetTop;
-            isDragging = false; isPressing = true;
-            
-            startListening(side); // Start immediately
-        };
-
-        const handleTouchMove = (e) => {
-            if(!isPressing) return;
-            e.preventDefault();
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - startX;
-            const deltaY = touch.clientY - startY;
-
-            // Simple movement logic
-            if (side === 'top') {
-                btn.style.left = (startLeft - deltaX) + 'px';
-                btn.style.top = (startTop - deltaY) + 'px';
-            } else {
-                btn.style.left = (startLeft + deltaX) + 'px';
-                btn.style.top = (startTop + deltaY) + 'px';
+        const handleStart = (e) => {
+            if(synth) {
+                synth.cancel(); 
+                const empty = new SpeechSynthesisUtterance(" ");
+                empty.volume = 0; 
+                empty.duration = 0.1;
+                synth.speak(empty);
             }
-        };
 
-        const handleTouchEnd = (e) => {
-            e.preventDefault();
-            isPressing = false;
-            stopListening(); // Always stop on release
-        };
-
-        // --- Mouse Events (Desktop) ---
-        const handleMouseDown = (e) => {
-            if(e.button !== 0) return; // Left click only
-            startX = e.clientX; startY = e.clientY;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX; startY = clientY;
             startLeft = btn.offsetLeft; startTop = btn.offsetTop;
             isDragging = false; isPressing = true;
             startListening(side);
         };
 
-        const handleMouseMove = (e) => {
+        const handleMove = (e) => {
             if(!isPressing) return;
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            if (side === 'top') {
-                btn.style.left = (startLeft - deltaX) + 'px';
-                btn.style.top = (startTop - deltaY) + 'px';
-            } else {
-                btn.style.left = (startLeft + deltaX) + 'px';
-                btn.style.top = (startTop + deltaY) + 'px';
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
+
+            if (!isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) {
+                isDragging = true;
+                stopListening(); 
+            }
+
+            if (isDragging) {
+                if(e.type === 'touchmove') e.preventDefault();
+                if (side === 'top') {
+                    btn.style.left = (startLeft - deltaX) + 'px';
+                    btn.style.top = (startTop - deltaY) + 'px';
+                } else {
+                    btn.style.left = (startLeft + deltaX) + 'px';
+                    btn.style.top = (startTop + deltaY) + 'px';
+                }
             }
         };
 
-        const handleMouseUp = (e) => {
-            if(isPressing) {
-                isPressing = false;
-                stopListening();
-            }
-        };
+        const handleEnd = (e) => { isPressing = false; if (isDragging) { isDragging = false; } else { stopListening(); } };
 
-        // Attach Events
-        btn.addEventListener('touchstart', handleTouchStart, {passive: false});
-        btn.addEventListener('touchmove', handleTouchMove, {passive: false});
-        btn.addEventListener('touchend', handleTouchEnd, {passive: false});
-        btn.addEventListener('touchcancel', handleTouchEnd, {passive: false});
-
-        btn.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
-        // Safety: if mouse leaves window or button area widely
-        // We rely on window mouseup for drag release, but if cursor leaves window:
-        window.addEventListener('mouseleave', () => { if(isPressing) { isPressing=false; stopListening(); } });
+        btn.addEventListener('mousedown', handleStart);
+        btn.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+        btn.addEventListener('touchstart', handleStart, {passive: false}); 
+        btn.addEventListener('touchmove', handleMove, {passive: false});
+        window.addEventListener('touchend', handleEnd);
     }
 
     async function callGeminiAPI(text, sP, tP) {
@@ -673,13 +618,8 @@
 
         if (!text) { showToast("沒有內容可下載"); return; }
         if (text.length > 200) { showToast("文字過長，Google TTS 無法下載 (限200字)", "error"); return; }
-
-        if (langCode !== 'zh-TW') {
-            langCode = langCode.split('-')[0];
-        }
-
+        if (langCode !== 'zh-TW') { langCode = langCode.split('-')[0]; }
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
-        
         const a = document.createElement('a');
         a.href = url;
         a.download = 'translation.mp3';
@@ -690,28 +630,54 @@
         document.body.removeChild(a);
     }
 
+    function startListening(side){
+        if(isListening) return;
+        if (isIOS) { recognition = getSpeechRecognition(); } else if (!recognition) { recognition = getSpeechRecognition(); }
+        activeMicSide=side; 
+        window.lastFinalTranscript = '';
+        window.lastInterimTranscript = '';
+        const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
+        recognition.lang = (side === 'top') ? languages[topIdx].speechCode : languages[bottomIdx].speechCode;
+        document.getElementById(side+'OriginalText').innerText='...'; document.getElementById((side==='top'?'bottom':'top')+'TranslatedText').innerText='...';
+        isListening = true; 
+        updateMicUI(true);
+        try { recognition.start(); } 
+        catch(e) { console.warn("Start error:", e); if(e.name !== 'InvalidStateError') { isListening = false; updateMicUI(false); } }
+    }
+
+    function stopListening(){ 
+        if(recognition) recognition.stop();
+        isListening = false; 
+        updateMicUI(false);
+    }
+
+    function updateMicUI(l){ document.getElementById('topMicBtn').classList.toggle('listening',l&&activeMicSide==='top'); document.getElementById('bottomMicBtn').classList.toggle('listening',l&&activeMicSide==='bottom'); }
+    
+    async function doVoiceTranslation(text, side){
+        const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
+        let sP, tP, out, speechLang;
+        if(side==='top'){ sP=languages[topIdx].prompt; tP=languages[bottomIdx].prompt; out='bottomTranslatedText'; speechLang=languages[bottomIdx].speechCode; } 
+        else { sP=languages[bottomIdx].prompt; tP=languages[topIdx].prompt; out='topTranslatedText'; speechLang=languages[topIdx].speechCode; }
+        const r=await callGeminiAPI(text, sP, tP);
+        document.getElementById(out).innerText=r;
+        if(!r.startsWith("[")) speakText(r, speechLang);
+    }
+
     function speakText(t, l) {
         if (!synth) return; synth.cancel();
         const voices = synth.getVoices();
         if (voices.length === 0) { setTimeout(() => speakText(t, l), 100); return; }
-        
         const u = new SpeechSynthesisUtterance(t); 
         u.lang = l;
         u.rate = 1.0; 
-        
         let v = voices.find(voice => voice.lang === l);
         if (!v) { const shortLang = l.split('-')[0]; v = voices.find(voice => voice.lang.startsWith(shortLang)); }
-        
         if (!v) { 
-            const langNameMap = { 
-                'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea',
-                'ms': 'malay', 'id': 'indones', 'ru': 'russ', 'ar': 'arab'
-            }; 
+            const langNameMap = { 'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea', 'ms': 'malay', 'id': 'indones', 'ru': 'russ', 'ar': 'arab' }; 
             const shortLang = l.split('-')[0]; 
             const keyword = langNameMap[shortLang]; 
             if (keyword) { v = voices.find(voice => voice.name.toLowerCase().includes(keyword)); } 
         }
-        
         if (v) { u.voice = v; } 
         else { 
             console.warn("找不到語音:", l);
