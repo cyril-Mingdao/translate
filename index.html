@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v40.0 下載終極修復版)</title>
+    <title>AI 智能翻譯機 (v41.0 部署修復版)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -588,13 +588,15 @@
             langCode = langCode.split('-')[0];
         }
 
-        // Using client=dict-chrome-ex for better compatibility
+        // v40.0: Use client=dict-chrome-ex for better compatibility
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
         
+        // v40.0: Use rel="noreferrer" to prevent 404 on hosted sites
         const a = document.createElement('a');
         a.href = url;
         a.download = 'translation.mp3';
         a.target = '_blank';
+        a.rel = 'noreferrer'; // CRITICAL FIX for GitHub Pages
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -647,7 +649,6 @@
         if(!r.startsWith("[")) speakText(r, speechLang);
     }
 
-    // v39.0: Smart Voice Matching
     function speakText(t, l) {
         if (!synth) return; synth.cancel();
         const voices = synth.getVoices();
