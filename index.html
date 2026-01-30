@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v36.0 多語系下載版)</title>
+    <title>AI 智能翻譯機 (v39.0 語音修正版)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -73,7 +73,7 @@
         .btn-danger { background: var(--danger-color); color: white; }
         .btn-warning { background: #fbbc04; color: #333; }
         #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 4000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; align-items: center; }
-        .toast { background: rgba(40, 40, 40, 0.95); color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; word-break: break-word;}
+        .toast { background: rgba(40, 40, 40, 0.95); color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; word-break: break-word; pointer-events: auto; }
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background: #d93025; }
 
@@ -108,9 +108,9 @@
         .play-btn { position: absolute; bottom: 25px; right: 10px; background: none; border: none; color: var(--primary-color); font-size: 20px; cursor: pointer; padding: 5px; opacity: 0.6; transition: opacity 0.2s; }
         .play-btn:hover { opacity: 1; transform: scale(1.1); }
 
-        /* v36.0: 下載按鈕樣式 */
+        /* 下載按鈕樣式 */
         .download-btn { 
-            position: absolute; bottom: 25px; right: 50px; /* 位於播放鈕左側 */
+            position: absolute; bottom: 25px; right: 50px; 
             background: none; border: none; color: #555; 
             font-size: 18px; cursor: pointer; padding: 5px; 
             opacity: 0.6; transition: opacity 0.2s; 
@@ -220,7 +220,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v36.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v39.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -253,7 +253,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 <script>
     let userApiKey = ''; let selectedModel = ''; 
-    // v36.0: 新增 馬來語、印尼語、俄語、阿拉伯語
     const languages=[
         {name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},
         {name:'English (英語)',prompt:'English',speechCode:'en-US'},
@@ -574,7 +573,7 @@
     }
     function playTextTranslation() { const text = document.getElementById('textOutput').value; const targetLangIdx = document.getElementById('textTargetLang').value; if(text) { speakText(text, languages[targetLangIdx].speechCode); } else { showToast("沒有可播放的文字"); } }
 
-    // v36.0: 下載音檔功能
+    // v37.0: 下載音檔功能 (Fix 404)
     function downloadTextAudio() {
         const text = document.getElementById('textOutput').value;
         const targetLangIdx = document.getElementById('textTargetLang').value;
@@ -582,13 +581,13 @@
 
         if (!text) { showToast("沒有內容可下載"); return; }
 
-        // 使用 Google TTS 接口生成連結並下載
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
+        // 使用 client=gtx 避免 404
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=gtx`;
         
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'translation.mp3'; // 嘗試強制下載
-        a.target = '_blank'; // 若瀏覽器阻擋下載則開新分頁
+        a.download = 'translation.mp3';
+        a.target = '_blank';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -641,19 +640,37 @@
         if(!r.startsWith("[")) speakText(r, speechLang);
     }
 
+    // v39.0: Smart Voice Matching
     function speakText(t, l) {
         if (!synth) return; synth.cancel();
         const voices = synth.getVoices();
         if (voices.length === 0) { setTimeout(() => speakText(t, l), 100); return; }
+        
         const u = new SpeechSynthesisUtterance(t); 
         u.lang = l;
         u.rate = 1.0; 
+        
+        // 1. Exact Match
         let v = voices.find(voice => voice.lang === l);
+        
+        // 2. Loose Match
         if (!v) { const shortLang = l.split('-')[0]; v = voices.find(voice => voice.lang.startsWith(shortLang)); }
-        if (!v) { const langNameMap = { 'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea' }; const shortLang = l.split('-')[0]; const keyword = langNameMap[shortLang]; if (keyword) { v = voices.find(voice => voice.name.toLowerCase().includes(keyword)); } }
-        if (v) { u.voice = v; } else { 
+        
+        // 3. Keyword Match (Fix for Malay/Indo on Windows)
+        if (!v) { 
+            const langNameMap = { 
+                'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea',
+                'ms': 'malay', 'id': 'indones', 'ru': 'russ', 'ar': 'arab'
+            }; 
+            const shortLang = l.split('-')[0]; 
+            const keyword = langNameMap[shortLang]; 
+            if (keyword) { v = voices.find(voice => voice.name.toLowerCase().includes(keyword)); } 
+        }
+        
+        if (v) { u.voice = v; } 
+        else { 
             console.warn("找不到語音:", l);
-            if(l.includes('vi') || l.includes('th')) {
+            if(l.includes('vi') || l.includes('th') || l.includes('ms')) {
                let helpUrl = "https://www.google.com/search?q=install+text+to+speech+voice+" + l;
                const isWindows = navigator.platform.indexOf('Win') > -1 || navigator.userAgent.indexOf('Windows') > -1;
                if (isWindows) helpUrl = "https://www.google.com/search?q=windows+10+add+language+speech+pack+" + l;
