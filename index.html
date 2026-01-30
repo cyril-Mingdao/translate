@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v41.0 部署修復版)</title>
+    <title>AI 智能翻譯機 (v45.0)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -11,18 +11,15 @@
         :root { --primary-color: #4285F4; --secondary-color: #34A853; --danger-color: #d93025; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #333; --mirrored-bg-top: #e8f0fe; --mirrored-bg-bottom: #e6f4ea; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* 全域禁止選取，防止手機長按誤觸 */
         body { 
             font-family: 'Roboto', Helvetica, Arial, sans-serif; 
             background-color: var(--bg-color); 
             margin: 0; color: var(--text-color); 
             height: 100vh; overflow: hidden; 
             display: flex; flex-direction: column; 
-            -webkit-user-select: none; /* Chrome/Safari/Opera */
-            -moz-user-select: none; /* Firefox */
-            -ms-user-select: none; /* IE/Edge */
+            -webkit-user-select: none; 
             user-select: none; 
-            -webkit-touch-callout: none; /* iOS Safari disable magnification */
+            -webkit-touch-callout: none;
         }
 
         /* ================= 頭部控制按鈕 ================= */
@@ -34,13 +31,11 @@
         .ctrl-btn { background: none; border: none; padding: 8px 15px; border-radius: 15px; cursor: pointer; font-size: 14px; color: #555; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
         .ctrl-btn.active { background-color: var(--primary-color); color: white; font-weight: bold; box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3); }
 
-        /* 文字模式/橫式 預設樣式 */
         @media (max-width: 480px) {
             body:not(.voice-mode-portrait) .header-controls { top: 15px; left: 50%; right: auto; transform: translateX(-50%); white-space: nowrap; }
         }
         @media (min-width: 481px) { .header-controls { top: 15px; right: 15px; } }
 
-        /* 直式語音模式 - 按鈕獨立並移至下拉選單右側 */
         body.voice-mode-portrait .header-controls { 
             top: calc(50% + 20px); 
             right: 10px; left: auto; transform: none; 
@@ -61,7 +56,6 @@
         .modal-overlay.show .custom-window { transform: translateY(0); }
         .custom-window h3 { margin-top: 0; color: var(--primary-color); font-size: 1.3rem;}
         .input-group { position: relative; margin: 20px 0; }
-        /* 輸入框允許選取，否則無法輸入 */
         .custom-window input { 
             width: 100%; padding: 12px 15px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; transition: border 0.3s; outline: none; background: #fafafa; 
             -webkit-user-select: auto; user-select: auto; 
@@ -91,22 +85,21 @@
         .swap-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--primary-color); padding: 10px; border-radius: 50%; transition: background 0.2s; flex-shrink: 0; }
         .swap-btn:hover { background: #e8f0fe; }
         
-        /* 輸入框容器，為了放置清除按鈕 */
-        .input-wrapper { position: relative; width: 100%; }
-        
-        /* 輸入框允許選取 */
+        .input-wrapper { position: relative; width: 100%; margin-bottom: 15px; }
         textarea { 
-            width: 100%; height: 120px; padding: 15px; border-radius: 10px; border: 1px solid #ddd; font-size: 18px; resize: none; font-family: inherit; margin-bottom: 15px; transition: border 0.3s; 
+            width: 100%; height: 120px; padding: 15px; padding-right: 45px; border-radius: 10px; border: 1px solid #ddd; font-size: 18px; resize: none; font-family: inherit; transition: border 0.3s; 
             -webkit-user-select: auto; user-select: auto;
         }
         textarea:focus { outline: none; border-color: var(--primary-color); }
         
-        /* 清除按鈕樣式 */
+        /* 文字模式垃圾桶按鈕 */
         .clear-btn {
-            position: absolute; bottom: 25px; right: 10px; background: none; border: none;
-            color: #999; font-size: 18px; cursor: pointer; padding: 5px; opacity: 0.6; transition: all 0.2s;
+            position: absolute; top: 10px; right: 10px; background: rgba(240,240,240,0.9);
+            border: none; border-radius: 50%; width: 32px; height: 32px; color: #666;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; transition: all 0.2s; z-index: 100; pointer-events: auto;
         }
-        .clear-btn:hover { opacity: 1; color: var(--danger-color); transform: scale(1.1); }
+        .clear-btn:hover { background: #feebeb; color: var(--danger-color); transform: scale(1.1); }
 
         .output-box { background-color: #f8f9fa; color: #444; border: 1px solid #eee;}
         button.translate-btn { width: 100%; padding: 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3); }
@@ -118,7 +111,6 @@
         .play-btn { position: absolute; bottom: 25px; right: 10px; background: none; border: none; color: var(--primary-color); font-size: 20px; cursor: pointer; padding: 5px; opacity: 0.6; transition: opacity 0.2s; }
         .play-btn:hover { opacity: 1; transform: scale(1.1); }
 
-        /* 下載按鈕樣式 */
         .download-btn { 
             position: absolute; bottom: 25px; right: 50px; 
             background: none; border: none; color: #555; 
@@ -145,7 +137,6 @@
             flex: 1; 
         }
         
-        /* 分隔線 */
         #splitter {
             height: 20px; width: 100%; background: transparent; cursor: row-resize;
             display: flex; align-items: center; justify-content: center; z-index: 100;
@@ -157,12 +148,12 @@
         .lang-select-container { font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start; }
         .voice-lang-select { border: none; background: transparent; font-size: 16px; font-weight: bold; color: #333; cursor: pointer; appearance: none; border-bottom: 1px dashed #999; width: auto; min-width: auto; flex: none; }
         
+        .bubble-wrapper { position: relative; margin-bottom: 10px; }
         .speech-bubble { 
-            background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; font-size: 18px; 
+            background: white; padding: 15px; border-radius: 18px; font-size: 18px; 
             min-height: 50px; height: auto; max-height: 40vh; overflow-y: auto; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.03); word-break: break-word; line-height: 1.4; border: 1px solid rgba(0,0,0,0.05);
             cursor: pointer; 
-            /* 翻譯文字允許選取/複製 */
             -webkit-user-select: text; 
             user-select: text;
         }
@@ -171,7 +162,15 @@
         .speech-bubble.translated { background: #fff; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         .bottom-half .speech-bubble.translated { border-color: var(--secondary-color); color: var(--secondary-color); }
         
-        /* 麥克風樣式 */
+        .copy-btn {
+            position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.8);
+            border: none; border-radius: 50%; width: 30px; height: 30px; color: #888;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .copy-btn:hover { color: var(--primary-color); background: #fff; transform: scale(1.1); }
+
         .mic-btn { 
             position: absolute; width: 75px; height: 75px; border-radius: 50%; border: none; 
             background-color: var(--primary-color); color: white; font-size: 32px; 
@@ -183,18 +182,8 @@
         }
         .mic-btn:active { cursor: grabbing; }
         
-        /* 麥克風距離分隔線 220px */
-        #topMicBtn { 
-            top: 220px; 
-            bottom: auto; 
-        }
-        
-        #bottomMicBtn { 
-            top: 220px; 
-            bottom: auto; 
-            background-color: var(--secondary-color); 
-            box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4); 
-        }
+        #topMicBtn { top: 220px; bottom: auto; }
+        #bottomMicBtn { top: 220px; bottom: auto; background-color: var(--secondary-color); box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4); }
         
         .mic-btn.listening { animation: pulse 1.5s infinite; background-color: var(--danger-color) !important; box-shadow: 0 6px 20px rgba(217, 48, 37, 0.4); }
         @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); } }
@@ -230,13 +219,15 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v41.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v45.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
+            
             <div class="input-wrapper">
                 <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
-                <button class="clear-btn" onclick="clearTextInput()" title="清空輸入"><i class="fas fa-trash-alt"></i></button>
+                <button class="clear-btn" onclick="clearTextInput()" title="清空文字"><i class="fas fa-trash-alt"></i></button>
             </div>
+
             <div class="output-wrapper">
                 <textarea id="textOutput" class="output-box" placeholder="翻譯結果..." readonly></textarea>
                 <button class="download-btn" onclick="downloadTextAudio()" title="下載音檔"><i class="fas fa-download"></i></button>
@@ -251,15 +242,27 @@
         <div class="half-screen top-half" id="topHalf">
             <button id="topMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user-friends"></i> 對方: <select id="voiceTopLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-            <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
+            <div class="bubble-wrapper">
+                <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
+                <button class="copy-btn" onclick="copyToClipboard('topOriginalText')" title="複製文字"><i class="far fa-copy"></i></button>
+            </div>
+            <div class="bubble-wrapper">
+                <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
+                <button class="copy-btn" onclick="copyToClipboard('topTranslatedText')" title="複製文字"><i class="far fa-copy"></i></button>
+            </div>
         </div>
         <div id="splitter"></div>
         <div class="half-screen bottom-half">
             <button id="bottomMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user"></i> 我方: <select id="voiceBottomLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-            <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
+            <div class="bubble-wrapper">
+                <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
+                <button class="copy-btn" onclick="copyToClipboard('bottomOriginalText')" title="複製文字"><i class="far fa-copy"></i></button>
+            </div>
+            <div class="bubble-wrapper">
+                <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
+                <button class="copy-btn" onclick="copyToClipboard('bottomTranslatedText')" title="複製文字"><i class="far fa-copy"></i></button>
+            </div>
         </div>
     </div>
 
@@ -333,7 +336,6 @@
         initSplitter();
         setupTextPlayback();
         
-        // Enter Key Support
         document.getElementById('textInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault(); 
@@ -364,13 +366,23 @@
         });
     }
 
-    // 1. 文字模式清空輸入框功能
     function clearTextInput() {
-        const input = document.getElementById('textInput');
-        const output = document.getElementById('textOutput');
-        input.value = '';
-        output.value = '';
-        input.focus();
+        document.getElementById('textInput').value = '';
+        document.getElementById('textOutput').value = '';
+        showToast("內容已清除");
+    }
+
+    function copyToClipboard(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        if (!text || text === '...') {
+            showToast("沒有文字可複製");
+            return;
+        }
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("已複製到剪貼簿");
+        }).catch(err => {
+            showToast("複製失敗", "error");
+        });
     }
 
     function initSplitter() {
@@ -434,11 +446,9 @@
     function getSpeechRecognition() {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) return null;
-        
         const recog = new SR();
         recog.continuous = !isIOS; 
         recog.interimResults = true;
-        
         recog.onresult = (e) => {
             let interim = '', final = '';
             for(let i=e.resultIndex;i<e.results.length;++i){ 
@@ -450,28 +460,15 @@
             if(final) window.lastFinalTranscript = final;
             if(interim) window.lastInterimTranscript = interim; 
         };
-        
         recog.onerror = (e) => { 
-            console.error("Speech Error:", e.error); 
-            if (e.error !== 'no-speech') {
-                stopListening(); 
-            }
+            if (e.error !== 'no-speech') stopListening(); 
             if(e.error === 'not-allowed') showToast("無法存取麥克風，請檢查權限", "error");
         };
-        
         recog.onend = () => { 
-            isListening = false;
-            updateMicUI(false);
-
+            isListening = false; updateMicUI(false);
             let textToTranslate = window.lastFinalTranscript;
-            if (!textToTranslate && isIOS && window.lastInterimTranscript) {
-                textToTranslate = window.lastInterimTranscript; 
-            }
-            if(textToTranslate && activeMicSide) { 
-                doVoiceTranslation(textToTranslate, activeMicSide); 
-                window.lastFinalTranscript = ''; 
-                window.lastInterimTranscript = '';
-            } 
+            if (!textToTranslate && isIOS && window.lastInterimTranscript) textToTranslate = window.lastInterimTranscript; 
+            if(textToTranslate && activeMicSide) { doVoiceTranslation(textToTranslate, activeMicSide); window.lastFinalTranscript = ''; window.lastInterimTranscript = ''; } 
         };
         return recog;
     }
@@ -479,10 +476,8 @@
     function checkSpeechSupport(){
         if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
             showToast("請用 Chrome","error");document.getElementById('voiceModeBtn').disabled=true;
-        } else {
-            if(!isIOS) {
-                recognition = getSpeechRecognition();
-            }
+        } else if(!isIOS) {
+            recognition = getSpeechRecognition();
         }
     }
 
@@ -501,16 +496,8 @@
         let isDragging = false;
         let dragThreshold = 10;
         let isPressing = false;
-
         const handleStart = (e) => {
-            if(synth) {
-                synth.cancel(); 
-                const empty = new SpeechSynthesisUtterance(" ");
-                empty.volume = 0; 
-                empty.duration = 0.1;
-                synth.speak(empty);
-            }
-
+            if(synth) { synth.cancel(); const empty = new SpeechSynthesisUtterance(" "); empty.volume = 0; empty.duration = 0.1; synth.speak(empty); }
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             startX = clientX; startY = clientY;
@@ -518,33 +505,20 @@
             isDragging = false; isPressing = true;
             startListening(side);
         };
-
         const handleMove = (e) => {
             if(!isPressing) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             const deltaX = clientX - startX;
             const deltaY = clientY - startY;
-
-            if (!isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) {
-                isDragging = true;
-                stopListening(); 
-            }
-
+            if (!isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) { isDragging = true; stopListening(); }
             if (isDragging) {
                 if(e.type === 'touchmove') e.preventDefault();
-                if (side === 'top') {
-                    btn.style.left = (startLeft - deltaX) + 'px';
-                    btn.style.top = (startTop - deltaY) + 'px';
-                } else {
-                    btn.style.left = (startLeft + deltaX) + 'px';
-                    btn.style.top = (startTop + deltaY) + 'px';
-                }
+                if (side === 'top') { btn.style.left = (startLeft - deltaX) + 'px'; btn.style.top = (startTop - deltaY) + 'px'; } 
+                else { btn.style.left = (startLeft + deltaX) + 'px'; btn.style.top = (startTop + deltaY) + 'px'; }
             }
         };
-
-        const handleEnd = (e) => { isPressing = false; if (isDragging) { isDragging = false; } else { stopListening(); } };
-
+        const handleEnd = () => { isPressing = false; if (!isDragging) stopListening(); isDragging = false; };
         btn.addEventListener('mousedown', handleStart);
         btn.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleEnd);
@@ -558,9 +532,7 @@
         const fallbackModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.0-pro'];
         let attemptList = [selectedModel || 'gemini-1.5-flash'];
         fallbackModels.forEach(m => { if(!attemptList.includes(m)) attemptList.push(m); });
-        
         const prompt=`You are a professional translator. Translate the following text from ${sP} to ${tP}. Output *only* the translated result. Do not include any thinking process, explanations, or notes. Text: "${text}"`;
-        
         let lastError = null;
         for (const model of attemptList) {
             try {
@@ -577,7 +549,7 @@
                     } 
                 }
                 const err = await res.json(); lastError = err.error ? err.error.message : "Unknown Error";
-                if(res.status === 429 || res.status === 404 || lastError.includes("limit: 0")) { console.warn(`Model ${model} failed. Trying next...`); continue; } else { break; }
+                if(res.status === 429 || res.status === 404 || lastError.includes("limit: 0")) continue; else break;
             } catch(e) { lastError = e.message; }
         }
         showToast("翻譯失敗: 額度不足或無可用模型", "error"); return `[系統訊息] ${lastError}`;
@@ -593,50 +565,33 @@
         const s=document.getElementById('textSourceLang'),t=document.getElementById('textTargetLang'); [s.value,t.value]=[t.value,s.value];
         const i=document.getElementById('textInput'),o=document.getElementById('textOutput'); if(o.value){i.value=o.value;o.value='';}
     }
-    function playTextTranslation() { const text = document.getElementById('textOutput').value; const targetLangIdx = document.getElementById('textTargetLang').value; if(text) { speakText(text, languages[targetLangIdx].speechCode); } else { showToast("沒有可播放的文字"); } }
+    function playTextTranslation() { const text = document.getElementById('textOutput').value; const targetLangIdx = document.getElementById('textTargetLang').value; if(text) speakText(text, languages[targetLangIdx].speechCode); else showToast("沒有可播放的文字"); }
 
     function downloadTextAudio() {
         const text = document.getElementById('textOutput').value;
         const targetLangIdx = document.getElementById('textTargetLang').value;
         let langCode = languages[targetLangIdx].speechCode;
-
         if (!text) { showToast("沒有內容可下載"); return; }
         if (text.length > 200) { showToast("文字過長，Google TTS 無法下載 (限200字)", "error"); return; }
-        if (langCode !== 'zh-TW') { langCode = langCode.split('-')[0]; }
+        if (langCode !== 'zh-TW') langCode = langCode.split('-')[0];
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'translation.mp3';
-        a.target = '_blank';
-        a.rel = 'noreferrer'; 
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        a.href = url; a.download = 'translation.mp3'; a.target = '_blank'; a.rel = 'noreferrer'; 
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
     function startListening(side){
         if(isListening) return;
-        if (isIOS) { recognition = getSpeechRecognition(); } else if (!recognition) { recognition = getSpeechRecognition(); }
-        activeMicSide=side; 
-        window.lastFinalTranscript = '';
-        window.lastInterimTranscript = '';
+        if (isIOS) recognition = getSpeechRecognition(); else if (!recognition) recognition = getSpeechRecognition();
+        activeMicSide=side; window.lastFinalTranscript = ''; window.lastInterimTranscript = '';
         const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
         recognition.lang = (side === 'top') ? languages[topIdx].speechCode : languages[bottomIdx].speechCode;
         document.getElementById(side+'OriginalText').innerText='...'; document.getElementById((side==='top'?'bottom':'top')+'TranslatedText').innerText='...';
-        isListening = true; 
-        updateMicUI(true);
-        try { recognition.start(); } 
-        catch(e) { console.warn("Start error:", e); if(e.name !== 'InvalidStateError') { isListening = false; updateMicUI(false); } }
+        isListening = true; updateMicUI(true);
+        try { recognition.start(); } catch(e) { if(e.name !== 'InvalidStateError') { isListening = false; updateMicUI(false); } }
     }
-
-    function stopListening(){ 
-        if(recognition) recognition.stop();
-        isListening = false; 
-        updateMicUI(false);
-    }
-
+    function stopListening(){ if(recognition) recognition.stop(); isListening = false; updateMicUI(false); }
     function updateMicUI(l){ document.getElementById('topMicBtn').classList.toggle('listening',l&&activeMicSide==='top'); document.getElementById('bottomMicBtn').classList.toggle('listening',l&&activeMicSide==='bottom'); }
-    
     async function doVoiceTranslation(text, side){
         const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
         let sP, tP, out, speechLang;
@@ -651,30 +606,12 @@
         if (!synth) return; synth.cancel();
         const voices = synth.getVoices();
         if (voices.length === 0) { setTimeout(() => speakText(t, l), 100); return; }
-        const u = new SpeechSynthesisUtterance(t); 
-        u.lang = l;
-        u.rate = 1.0; 
+        const u = new SpeechSynthesisUtterance(t); u.lang = l; u.rate = 1.0; 
         let v = voices.find(voice => voice.lang === l);
-        if (!v) { const shortLang = l.split('-')[0]; v = voices.find(voice => voice.lang.startsWith(shortLang)); }
-        if (!v) { 
-            const langNameMap = { 'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea', 'ms': 'malay', 'id': 'indones', 'ru': 'russ', 'ar': 'arab' }; 
-            const shortLang = l.split('-')[0]; 
-            const keyword = langNameMap[shortLang]; 
-            if (keyword) { v = voices.find(voice => voice.name.toLowerCase().includes(keyword)); } 
-        }
-        if (v) { u.voice = v; } 
-        else { 
-            console.warn("找不到語音:", l);
-            if(l.includes('vi') || l.includes('th') || l.includes('ms')) {
-               let helpUrl = "https://www.google.com/search?q=install+text+to+speech+voice+" + l;
-               const isWindows = navigator.platform.indexOf('Win') > -1 || navigator.userAgent.indexOf('Windows') > -1;
-               if (isWindows) helpUrl = "https://www.google.com/search?q=windows+10+add+language+speech+pack+" + l;
-               showToast(`未安裝該語言語音包 <a href="${helpUrl}" target="_blank" style="color:#80dfff;text-decoration:underline;margin-left:5px;">點此安裝教學 &rarr;</a>`, "normal");
-            }
-        }
+        if (!v) v = voices.find(voice => voice.lang.startsWith(l.split('-')[0]));
+        if (v) u.voice = v; 
         synth.speak(u);
     }
-    if(speechSynthesis.onvoiceschanged !== undefined) { speechSynthesis.onvoiceschanged = () => { }; }
 </script>
 </body>
 </html>
