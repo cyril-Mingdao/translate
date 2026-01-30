@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v39.0 語音修正版)</title>
+    <title>AI 智能翻譯機 (v40.0 下載終極修復版)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -220,7 +220,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v39.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v40.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -573,16 +573,23 @@
     }
     function playTextTranslation() { const text = document.getElementById('textOutput').value; const targetLangIdx = document.getElementById('textTargetLang').value; if(text) { speakText(text, languages[targetLangIdx].speechCode); } else { showToast("沒有可播放的文字"); } }
 
-    // v37.0: 下載音檔功能 (Fix 404)
+    // v40.0: 下載音檔功能修復 (Fix 404 & Lang Code)
     function downloadTextAudio() {
         const text = document.getElementById('textOutput').value;
         const targetLangIdx = document.getElementById('textTargetLang').value;
-        const langCode = languages[targetLangIdx].speechCode;
+        let langCode = languages[targetLangIdx].speechCode;
 
         if (!text) { showToast("沒有內容可下載"); return; }
+        if (text.length > 200) { showToast("文字過長，Google TTS 無法下載 (限200字)", "error"); return; }
 
-        // 使用 client=gtx 避免 404
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=gtx`;
+        // Google TTS Language Code Mapping Fix
+        // Convert 'en-US' -> 'en', 'ms-MY' -> 'ms', etc. but keep 'zh-TW'
+        if (langCode !== 'zh-TW') {
+            langCode = langCode.split('-')[0];
+        }
+
+        // Using client=dict-chrome-ex for better compatibility
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
         
         const a = document.createElement('a');
         a.href = url;
@@ -650,13 +657,10 @@
         u.lang = l;
         u.rate = 1.0; 
         
-        // 1. Exact Match
         let v = voices.find(voice => voice.lang === l);
-        
-        // 2. Loose Match
         if (!v) { const shortLang = l.split('-')[0]; v = voices.find(voice => voice.lang.startsWith(shortLang)); }
         
-        // 3. Keyword Match (Fix for Malay/Indo on Windows)
+        // Keyword Match for missing voices (Windows)
         if (!v) { 
             const langNameMap = { 
                 'vi': 'viet', 'th': 'thai', 'ja': 'japan', 'ko': 'korea',
