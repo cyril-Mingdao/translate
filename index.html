@@ -91,6 +91,9 @@
         .swap-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--primary-color); padding: 10px; border-radius: 50%; transition: background 0.2s; flex-shrink: 0; }
         .swap-btn:hover { background: #e8f0fe; }
         
+        /* 輸入框容器，為了放置清除按鈕 */
+        .input-wrapper { position: relative; width: 100%; }
+        
         /* 輸入框允許選取 */
         textarea { 
             width: 100%; height: 120px; padding: 15px; border-radius: 10px; border: 1px solid #ddd; font-size: 18px; resize: none; font-family: inherit; margin-bottom: 15px; transition: border 0.3s; 
@@ -98,6 +101,13 @@
         }
         textarea:focus { outline: none; border-color: var(--primary-color); }
         
+        /* 清除按鈕樣式 */
+        .clear-btn {
+            position: absolute; bottom: 25px; right: 10px; background: none; border: none;
+            color: #999; font-size: 18px; cursor: pointer; padding: 5px; opacity: 0.6; transition: all 0.2s;
+        }
+        .clear-btn:hover { opacity: 1; color: var(--danger-color); transform: scale(1.1); }
+
         .output-box { background-color: #f8f9fa; color: #444; border: 1px solid #eee;}
         button.translate-btn { width: 100%; padding: 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3); }
         button.translate-btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
@@ -147,9 +157,8 @@
         .lang-select-container { font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start; }
         .voice-lang-select { border: none; background: transparent; font-size: 16px; font-weight: bold; color: #333; cursor: pointer; appearance: none; border-bottom: 1px dashed #999; width: auto; min-width: auto; flex: none; }
         
-        .bubble-wrapper { position: relative; margin-bottom: 10px; }
         .speech-bubble { 
-            background: white; padding: 15px; border-radius: 18px; font-size: 18px; 
+            background: white; padding: 15px; border-radius: 18px; margin-bottom: 10px; font-size: 18px; 
             min-height: 50px; height: auto; max-height: 40vh; overflow-y: auto; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.03); word-break: break-word; line-height: 1.4; border: 1px solid rgba(0,0,0,0.05);
             cursor: pointer; 
@@ -162,17 +171,6 @@
         .speech-bubble.translated { background: #fff; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         .bottom-half .speech-bubble.translated { border-color: var(--secondary-color); color: var(--secondary-color); }
         
-        /* 複製按鈕樣式 */
-        .copy-btn {
-            position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.8);
-            border: none; border-radius: 50%; width: 30px; height: 30px; color: #888;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 14px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
-        .copy-btn:hover { color: var(--primary-color); background: #fff; transform: scale(1.1); }
-        .copy-btn:active { transform: scale(0.9); }
-
         /* 麥克風樣式 */
         .mic-btn { 
             position: absolute; width: 75px; height: 75px; border-radius: 50%; border: none; 
@@ -235,7 +233,10 @@
             <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v41.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
-            <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
+            <div class="input-wrapper">
+                <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
+                <button class="clear-btn" onclick="clearTextInput()" title="清空輸入"><i class="fas fa-trash-alt"></i></button>
+            </div>
             <div class="output-wrapper">
                 <textarea id="textOutput" class="output-box" placeholder="翻譯結果..." readonly></textarea>
                 <button class="download-btn" onclick="downloadTextAudio()" title="下載音檔"><i class="fas fa-download"></i></button>
@@ -250,27 +251,15 @@
         <div class="half-screen top-half" id="topHalf">
             <button id="topMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user-friends"></i> 對方: <select id="voiceTopLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            <div class="bubble-wrapper">
-                <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-                <button class="copy-btn" onclick="copyToClipboard('topOriginalText')" title="複製文字"><i class="far fa-copy"></i></button>
-            </div>
-            <div class="bubble-wrapper">
-                <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
-                <button class="copy-btn" onclick="copyToClipboard('topTranslatedText')" title="複製文字"><i class="far fa-copy"></i></button>
-            </div>
+            <div id="topOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
+            <div id="topTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
         </div>
         <div id="splitter"></div>
         <div class="half-screen bottom-half">
             <button id="bottomMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user"></i> 我方: <select id="voiceBottomLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
-            <div class="bubble-wrapper">
-                <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
-                <button class="copy-btn" onclick="copyToClipboard('bottomOriginalText')" title="複製文字"><i class="far fa-copy"></i></button>
-            </div>
-            <div class="bubble-wrapper">
-                <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
-                <button class="copy-btn" onclick="copyToClipboard('bottomTranslatedText')" title="複製文字"><i class="far fa-copy"></i></button>
-            </div>
+            <div id="bottomOriginalText" class="speech-bubble" placeholder="聆聽中..."></div>
+            <div id="bottomTranslatedText" class="speech-bubble translated" placeholder="翻譯結果..."></div>
         </div>
     </div>
 
@@ -375,18 +364,13 @@
         });
     }
 
-    // 複製文字功能
-    function copyToClipboard(elementId) {
-        const text = document.getElementById(elementId).innerText;
-        if (!text || text === '...') {
-            showToast("沒有文字可複製");
-            return;
-        }
-        navigator.clipboard.writeText(text).then(() => {
-            showToast("已複製到剪貼簿");
-        }).catch(err => {
-            showToast("複製失敗", "error");
-        });
+    // 1. 文字模式清空輸入框功能
+    function clearTextInput() {
+        const input = document.getElementById('textInput');
+        const output = document.getElementById('textOutput');
+        input.value = '';
+        output.value = '';
+        input.focus();
     }
 
     function initSplitter() {
