@@ -74,7 +74,8 @@
         /* ================= 文字模式介面 ================= */
         #textModeContainer { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 20px; overflow-y: auto; }
         .text-card { background-color: var(--card-bg); width: 100%; max-width: 600px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-        h2.app-title { text-align: center; color: var(--primary-color); margin-bottom: 20px; font-size: 1.5rem;}
+        h2.app-title { text-align: center; color: var(--primary-color); margin-bottom: 5px; font-size: 1.5rem;}
+        .app-subtitle { text-align: center; color: #000; margin-bottom: 20px; font-size: 0.75rem; font-weight: normal; }
         .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; }
         
         select { 
@@ -92,7 +93,6 @@
         }
         textarea:focus { outline: none; border-color: var(--primary-color); }
         
-        /* 文字模式垃圾桶按鈕 */
         .clear-btn {
             position: absolute; top: 10px; right: 10px; background: rgba(240,240,240,0.9);
             border: none; border-radius: 50%; width: 32px; height: 32px; color: #666;
@@ -195,7 +195,7 @@
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
     <div class="header-controls" id="headerControls">
         <button class="ctrl-btn active" onclick="switchMode('text')" id="textModeBtn"><span>文字</span><i class="fas fa-keyboard"></i></button>
         <button class="ctrl-btn" onclick="switchMode('voice')" id="voiceModeBtn"><span>語音</span><i class="fas fa-microphone-alt"></i></button>
@@ -220,6 +220,7 @@
     <div id="textModeContainer">
         <div class="text-card">
             <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v45.0)</h2>
+            <div class="app-subtitle">詹宗龍 製作</div>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             
