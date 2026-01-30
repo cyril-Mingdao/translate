@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v42.0 複製功能版)</title>
+    <title>AI 智能翻譯機 (v43.0 語音按鈕修復版)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -147,7 +147,6 @@
         .lang-select-container { font-weight: bold; color: #555; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 15px; align-self: flex-start; }
         .voice-lang-select { border: none; background: transparent; font-size: 16px; font-weight: bold; color: #333; cursor: pointer; appearance: none; border-bottom: 1px dashed #999; width: auto; min-width: auto; flex: none; }
         
-        /* v42.0: 氣泡容器樣式調整 */
         .bubble-wrapper {
             position: relative;
             width: 100%;
@@ -160,39 +159,22 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.03); word-break: break-word; line-height: 1.4; border: 1px solid rgba(0,0,0,0.05);
             cursor: pointer; 
             -webkit-user-select: text; user-select: text;
-            /* v42.0: 增加右側內距，避免文字蓋住複製按鈕 */
             padding-right: 35px;
-            margin-bottom: 0; /* 控制權交給 wrapper */
+            margin-bottom: 0;
         }
         .speech-bubble:active { transform: scale(0.98); background: #f0f0f0; transition: transform 0.1s; } 
 
         .speech-bubble.translated { background: #fff; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         .bottom-half .speech-bubble.translated { border-color: var(--secondary-color); color: var(--secondary-color); }
         
-        /* v42.0: 複製按鈕樣式 */
         .copy-btn-bubble {
-            position: absolute;
-            right: 8px;
-            bottom: 8px;
-            background: rgba(255,255,255,0.8);
-            border: none;
-            color: #aaa;
-            font-size: 14px;
-            padding: 5px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: all 0.2s;
-            z-index: 10;
-            pointer-events: auto;
+            position: absolute; right: 8px; bottom: 8px;
+            background: rgba(255,255,255,0.8); border: none; color: #aaa;
+            font-size: 14px; padding: 5px; cursor: pointer; border-radius: 5px;
+            transition: all 0.2s; z-index: 10; pointer-events: auto;
         }
-        .copy-btn-bubble:hover {
-            color: var(--primary-color);
-            background: #f0f8ff;
-            transform: scale(1.1);
-        }
-        .copy-btn-bubble:active {
-            transform: scale(0.95);
-        }
+        .copy-btn-bubble:hover { color: var(--primary-color); background: #f0f8ff; transform: scale(1.1); }
+        .copy-btn-bubble:active { transform: scale(0.95); }
 
         /* 麥克風樣式 */
         .mic-btn { 
@@ -206,7 +188,6 @@
         }
         .mic-btn:active { cursor: grabbing; }
         
-        /* 麥克風距離分隔線 220px */
         #topMicBtn { 
             top: 220px; 
             bottom: auto; 
@@ -253,7 +234,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v42.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v43.0)</h2>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
             <textarea id="textInput" placeholder="請輸入要翻譯的文字..."></textarea>
@@ -269,7 +250,7 @@
 
     <div id="voiceMirroredContainer">
         <div class="half-screen top-half" id="topHalf">
-            <button id="topMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
+            <button id="topMicBtn" class="mic-btn" oncontextmenu="return false;"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user-friends"></i> 對方: <select id="voiceTopLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
             
             <div class="bubble-wrapper">
@@ -284,7 +265,7 @@
         </div>
         <div id="splitter"></div>
         <div class="half-screen bottom-half">
-            <button id="bottomMicBtn" class="mic-btn"><i class="fas fa-microphone"></i></button>
+            <button id="bottomMicBtn" class="mic-btn" oncontextmenu="return false;"><i class="fas fa-microphone"></i></button>
             <div class="lang-select-container"><i class="fas fa-user"></i> 我方: <select id="voiceBottomLang" class="voice-lang-select" onchange="syncLanguages('voice')"></select></div>
             
             <div class="bubble-wrapper">
@@ -378,7 +359,6 @@
         });
     };
     
-    // v42.0: Copy Function
     function copyText(elementId) {
         const text = document.getElementById(elementId).innerText;
         if (!text || text === '...' || text === '聆聽中...' || text === '翻譯結果...') {
@@ -386,7 +366,6 @@
             return;
         }
         
-        // Fallback for older browsers or non-secure contexts
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text).then(() => {
                 showToast("已複製到剪貼簿");
@@ -608,11 +587,21 @@
             }
         };
 
-        const handleEnd = (e) => { isPressing = false; if (isDragging) { isDragging = false; } else { stopListening(); } };
+        const handleEnd = (e) => { 
+            isPressing = false; 
+            if (isDragging) { 
+                isDragging = false; 
+                // v43.0: Even if dragged, make sure to stop listening if finger is up
+                stopListening(); 
+            } else { 
+                stopListening(); 
+            } 
+        };
 
         btn.addEventListener('mousedown', handleStart);
         btn.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleEnd);
+        window.addEventListener('mouseleave', handleEnd); // Fix: Mouse leaving button area
         btn.addEventListener('touchstart', handleStart, {passive: false}); 
         btn.addEventListener('touchmove', handleMove, {passive: false});
         window.addEventListener('touchend', handleEnd);
@@ -672,7 +661,7 @@
             langCode = langCode.split('-')[0];
         }
 
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=gtx`;
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
         
         const a = document.createElement('a');
         a.href = url;
