@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v45.0)</title>
+    <title>AI 智能翻譯機 (v46.0)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -219,7 +219,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v45.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v46.0)</h2>
             <div class="app-subtitle">詹宗龍 製作</div>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
@@ -556,12 +556,54 @@
         showToast("翻譯失敗: 額度不足或無可用模型", "error"); return `[系統訊息] ${lastError}`;
     }
 
+    // 新增：偵測語言功能
+    async function detectLanguage(text) {
+        const langNames = languages.map(l => l.prompt).join(', ');
+        const prompt = `Identify the language of the following text. Choose ONLY ONE from this list: [${langNames}]. Output only the language name. Text: "${text}"`;
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel || 'gemini-1.5-flash'}:generateContent?key=${userApiKey}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const detected = data.candidates[0].content.parts[0].text.trim();
+                const index = languages.findIndex(l => detected.toLowerCase().includes(l.prompt.toLowerCase()));
+                return index !== -1 ? index : null;
+            }
+        } catch (e) { console.error("Detection error:", e); }
+        return null;
+    }
+
     async function doTextTranslation(){
         const i=document.getElementById('textInput'),o=document.getElementById('textOutput'),b=document.getElementById('textTranslateBtn'),l=document.getElementById('textLoading');
-        if(!i.value.trim())return; b.disabled=true;l.style.display='block';o.value='';
-        const s=document.getElementById('textSourceLang').value,t=document.getElementById('textTargetLang').value;
-        try{ o.value=await callGeminiAPI(i.value,languages[s].prompt,languages[t].prompt); } catch(e){ o.value="Error"; } finally{ b.disabled=false;l.style.display='none'; }
+        const sourceSelect = document.getElementById('textSourceLang');
+        const targetSelect = document.getElementById('textTargetLang');
+        
+        if(!i.value.trim())return; 
+        b.disabled=true; l.style.display='block'; o.value='';
+
+        try{
+            // 自動偵測語言並更新下拉選單
+            const detectedIdx = await detectLanguage(i.value);
+            if (detectedIdx !== null && detectedIdx != sourceSelect.value) {
+                sourceSelect.value = detectedIdx;
+                showToast(`偵測到語言: ${languages[detectedIdx].name}`);
+                // 如果偵測出的語言與目標語言相同，自動將目標語言換成對方的原選單 (簡單防錯)
+                if (sourceSelect.value == targetSelect.value) {
+                    targetSelect.value = (detectedIdx == 0) ? 1 : 0;
+                }
+            }
+
+            const s=sourceSelect.value, t=targetSelect.value;
+            o.value=await callGeminiAPI(i.value, languages[s].prompt, languages[t].prompt); 
+        } catch(e){ 
+            o.value="Error"; 
+        } finally{ 
+            b.disabled=false; l.style.display='none'; 
+        }
     }
+    
     function swapTextLanguages(){
         const s=document.getElementById('textSourceLang'),t=document.getElementById('textTargetLang'); [s.value,t.value]=[t.value,s.value];
         const i=document.getElementById('textInput'),o=document.getElementById('textOutput'); if(o.value){i.value=o.value;o.value='';}
