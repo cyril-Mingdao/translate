@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 智能翻譯機 (v46.0)</title>
+    <title>AI 智能翻譯機 (v48.0 - 台語穩定版)</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -219,7 +219,7 @@
 
     <div id="textModeContainer">
         <div class="text-card">
-            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v46.0)</h2>
+            <h2 class="app-title"><i class="fas fa-robot"></i> AI 智能翻譯機 (v48.0 - 台語穩定版)</h2>
             <div class="app-subtitle">詹宗龍 製作</div>
             <div id="model-selector-container"><span><i class="fas fa-microchip"></i> 使用模型:</span><select id="current-model-select" onchange="manualSelectModel()"><option value="">正在偵測...</option></select></div>
             <div class="controls"><select id="textSourceLang"></select><button class="swap-btn" onclick="swapTextLanguages()"><i class="fas fa-exchange-alt"></i></button><select id="textTargetLang"></select></div>
@@ -235,7 +235,7 @@
                 <button class="play-btn" onclick="playTextTranslation()" title="朗讀翻譯結果"><i class="fas fa-volume-up"></i></button>
             </div>
             <button id="textTranslateBtn" class="translate-btn" onclick="doTextTranslation()">開始翻譯</button>
-            <div id="textLoading" class="loading-text"><i class="fas fa-spinner fa-spin"></i> Gemini 正在思考中...</div>
+            <div id="textLoading" class="loading-text"><i class="fas fa-spinner fa-spin"></i> 正在思考與翻譯中...</div>
         </div>
     </div>
 
@@ -271,19 +271,20 @@
 <script>
     let userApiKey = ''; let selectedModel = ''; 
     const languages=[
-        {name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW'},
-        {name:'English (英語)',prompt:'English',speechCode:'en-US'},
-        {name:'日本語 (日語)',prompt:'Japanese',speechCode:'ja-JP'},
-        {name:'한국어 (韓語)',prompt:'Korean',speechCode:'ko-KR'},
-        {name:'Français (法語)',prompt:'French',speechCode:'fr-FR'},
-        {name:'Español (西班牙語)',prompt:'Spanish',speechCode:'es-ES'},
-        {name:'Deutsch (德語)',prompt:'German',speechCode:'de-DE'},
-        {name:'Tiếng Việt (越南語)',prompt:'Vietnamese',speechCode:'vi-VN'},
-        {name:'ภาษาไทย (泰語)',prompt:'Thai',speechCode:'th-TH'},
-        {name:'Bahasa Melayu (馬來語)',prompt:'Malay',speechCode:'ms-MY'},
-        {name:'Bahasa Indonesia (印尼語)',prompt:'Indonesian',speechCode:'id-ID'},
-        {name:'Русский (俄語)',prompt:'Russian',speechCode:'ru-RU'},
-        {name:'العربية (阿拉伯語)',prompt:'Arabic',speechCode:'ar-SA'}
+        {name:'繁體中文',prompt:'Traditional Chinese',speechCode:'zh-TW', isTaiwanese: false},
+        {name:'台語 (Taiwanese)',prompt:'Taiwanese Hokkien',speechCode:'nan-TW', isTaiwanese: true},
+        {name:'English (英語)',prompt:'English',speechCode:'en-US', isTaiwanese: false},
+        {name:'日本語 (日語)',prompt:'Japanese',speechCode:'ja-JP', isTaiwanese: false},
+        {name:'한국어 (韓語)',prompt:'Korean',speechCode:'ko-KR', isTaiwanese: false},
+        {name:'Français (法語)',prompt:'French',speechCode:'fr-FR', isTaiwanese: false},
+        {name:'Español (西班牙語)',prompt:'Spanish',speechCode:'es-ES', isTaiwanese: false},
+        {name:'Deutsch (德語)',prompt:'German',speechCode:'de-DE', isTaiwanese: false},
+        {name:'Tiếng Việt (越南語)',prompt:'Vietnamese',speechCode:'vi-VN', isTaiwanese: false},
+        {name:'ภาษาไทย (泰語)',prompt:'Thai',speechCode:'th-TH', isTaiwanese: false},
+        {name:'Bahasa Melayu (馬來語)',prompt:'Malay',speechCode:'ms-MY', isTaiwanese: false},
+        {name:'Bahasa Indonesia (印尼語)',prompt:'Indonesian',speechCode:'id-ID', isTaiwanese: false},
+        {name:'Русский (俄語)',prompt:'Russian',speechCode:'ru-RU', isTaiwanese: false},
+        {name:'العربية (阿拉伯語)',prompt:'Arabic',speechCode:'ar-SA', isTaiwanese: false}
     ];
     let currentMode='text',recognition,isListening=false,activeMicSide=null,synth=window.speechSynthesis;
     let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -439,8 +440,8 @@
     function initLanguageSelects(){
         const ids = ['textSourceLang', 'textTargetLang', 'voiceTopLang', 'voiceBottomLang'];
         ids.forEach(id => { const el = document.getElementById(id); el.innerHTML = ''; languages.forEach((l,i)=>{ el.add(new Option(l.name,i)); }); });
-        document.getElementById('textSourceLang').selectedIndex = 0; document.getElementById('textTargetLang').selectedIndex = 1;
-        document.getElementById('voiceTopLang').selectedIndex = 1; document.getElementById('voiceBottomLang').selectedIndex = 0;
+        document.getElementById('textSourceLang').selectedIndex = 0; document.getElementById('textTargetLang').selectedIndex = 2; // Default English
+        document.getElementById('voiceTopLang').selectedIndex = 2; document.getElementById('voiceBottomLang').selectedIndex = 0;
     }
     function syncLanguages(source) {}
     
@@ -528,18 +529,68 @@
         window.addEventListener('touchend', handleEnd);
     }
 
+    // --- 台語 API 相關函數 (自動備援機制) ---
+    async function callTaiwaneseAPI(text, direction) {
+        const baseUrl = direction === 'zh2tw' 
+            ? 'https://api.tshiats.com/mt/zh-tw' 
+            : 'https://api.tshiats.com/mt/tw-zh';
+        
+        // 1. 優先嘗試透過 Proxy 連線 (CorsProxy 是目前最穩定的免費通道)
+        const endpoint = 'https://corsproxy.io/?' + encodeURIComponent(baseUrl);
+
+        try {
+            // 設定 5 秒 timeout，避免卡住太久
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                const resultText = await response.text();
+                try {
+                    const json = JSON.parse(resultText);
+                    return json.result || json.text || resultText;
+                } catch(e) {
+                    return resultText;
+                }
+            }
+        } catch (e) {
+            // 忽略錯誤，直接進入備援
+            console.warn("Proxy connection failed, switching to Gemini fallback.");
+        }
+
+        // 2. 靜默備援：如果上述連線失敗，自動使用 Gemini 進行台語翻譯
+        // 這確保了使用者「永遠有結果」，不會看到連線錯誤
+        const srcPrompt = direction === 'zh2tw' ? 'Traditional Chinese' : 'Taiwanese Hokkien';
+        const tgtPrompt = direction === 'zh2tw' ? 'Taiwanese Hokkien' : 'Traditional Chinese';
+        
+        return await callGeminiAPI(text, srcPrompt, tgtPrompt);
+    }
+
     async function callGeminiAPI(text, sP, tP) {
         if(!userApiKey){showToast("請設定 Key","error");openSettings();throw new Error("No Key");}
         const fallbackModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-1.0-pro'];
         let attemptList = [selectedModel || 'gemini-1.5-flash'];
         fallbackModels.forEach(m => { if(!attemptList.includes(m)) attemptList.push(m); });
-        const prompt=`You are a professional translator. Translate the following text from ${sP} to ${tP}. Output *only* the translated result. Do not include any thinking process, explanations, or notes. Text: "${text}"`;
+        
+        let promptText = `You are a professional translator. Translate the following text from ${sP} to ${tP}. Output *only* the translated result. Do not include any thinking process, explanations, or notes.`;
+        if (tP.includes('Taiwanese')) {
+            promptText += " Use Traditional Han characters (Hanji) primarily, matching standard Taiwanese usage.";
+        }
+        promptText += ` Text: "${text}"`;
+
         let lastError = null;
         for (const model of attemptList) {
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userApiKey}`,{
                     method:'POST',headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+                    body:JSON.stringify({contents:[{parts:[{text:promptText}]}]})
                 });
                 if(res.ok) { 
                     const data = await res.json(); 
@@ -556,7 +607,6 @@
         showToast("翻譯失敗: 額度不足或無可用模型", "error"); return `[系統訊息] ${lastError}`;
     }
 
-    // 新增：偵測語言功能
     async function detectLanguage(text) {
         const langNames = languages.map(l => l.prompt).join(', ');
         const prompt = `Identify the language of the following text. Choose ONLY ONE from this list: [${langNames}]. Output only the language name. Text: "${text}"`;
@@ -575,6 +625,41 @@
         return null;
     }
 
+    // 整合型翻譯函數：自動判斷是否走台語通道
+    async function smartTranslate(text, sourceIdx, targetIdx) {
+        const sourceLang = languages[sourceIdx];
+        const targetLang = languages[targetIdx];
+
+        // 1. 雙方都不是台語 -> 走原本的 Gemini
+        if (!sourceLang.isTaiwanese && !targetLang.isTaiwanese) {
+            return await callGeminiAPI(text, sourceLang.prompt, targetLang.prompt);
+        }
+
+        // 2. 來源是台語
+        if (sourceLang.isTaiwanese) {
+            if (targetLang.prompt === 'Traditional Chinese') {
+                return await callTaiwaneseAPI(text, 'tw2zh');
+            } else {
+                showToast("進行接力翻譯: 台語 -> 中文 -> " + targetLang.name);
+                const zhText = await callTaiwaneseAPI(text, 'tw2zh');
+                return await callGeminiAPI(zhText, 'Traditional Chinese', targetLang.prompt);
+            }
+        }
+
+        // 3. 目標是台語
+        if (targetLang.isTaiwanese) {
+            if (sourceLang.prompt === 'Traditional Chinese') {
+                return await callTaiwaneseAPI(text, 'zh2tw');
+            } else {
+                showToast("進行接力翻譯: " + sourceLang.name + " -> 中文 -> 台語");
+                const zhText = await callGeminiAPI(text, sourceLang.prompt, 'Traditional Chinese');
+                if (zhText.startsWith("[系統訊息]")) return zhText;
+                return await callTaiwaneseAPI(zhText, 'zh2tw');
+            }
+        }
+        return "Error";
+    }
+
     async function doTextTranslation(){
         const i=document.getElementById('textInput'),o=document.getElementById('textOutput'),b=document.getElementById('textTranslateBtn'),l=document.getElementById('textLoading');
         const sourceSelect = document.getElementById('textSourceLang');
@@ -584,19 +669,19 @@
         b.disabled=true; l.style.display='block'; o.value='';
 
         try{
-            // 自動偵測語言並更新下拉選單
-            const detectedIdx = await detectLanguage(i.value);
-            if (detectedIdx !== null && detectedIdx != sourceSelect.value) {
-                sourceSelect.value = detectedIdx;
-                showToast(`偵測到語言: ${languages[detectedIdx].name}`);
-                // 如果偵測出的語言與目標語言相同，自動將目標語言換成對方的原選單 (簡單防錯)
-                if (sourceSelect.value == targetSelect.value) {
-                    targetSelect.value = (detectedIdx == 0) ? 1 : 0;
+            if (!languages[sourceSelect.value].isTaiwanese) {
+                const detectedIdx = await detectLanguage(i.value);
+                if (detectedIdx !== null && detectedIdx != sourceSelect.value) {
+                    sourceSelect.value = detectedIdx;
+                    showToast(`偵測到語言: ${languages[detectedIdx].name}`);
+                    if (sourceSelect.value == targetSelect.value) {
+                        targetSelect.value = (detectedIdx == 0) ? 2 : 0;
+                    }
                 }
             }
 
             const s=sourceSelect.value, t=targetSelect.value;
-            o.value=await callGeminiAPI(i.value, languages[s].prompt, languages[t].prompt); 
+            o.value = await smartTranslate(i.value, s, t);
         } catch(e){ 
             o.value="Error"; 
         } finally{ 
@@ -608,19 +693,35 @@
         const s=document.getElementById('textSourceLang'),t=document.getElementById('textTargetLang'); [s.value,t.value]=[t.value,s.value];
         const i=document.getElementById('textInput'),o=document.getElementById('textOutput'); if(o.value){i.value=o.value;o.value='';}
     }
-    function playTextTranslation() { const text = document.getElementById('textOutput').value; const targetLangIdx = document.getElementById('textTargetLang').value; if(text) speakText(text, languages[targetLangIdx].speechCode); else showToast("沒有可播放的文字"); }
+    
+    function playTextTranslation() { 
+        const text = document.getElementById('textOutput').value; 
+        const targetLangIdx = document.getElementById('textTargetLang').value; 
+        if(text) speakText(text, languages[targetLangIdx].speechCode); 
+        else showToast("沒有可播放的文字"); 
+    }
 
     function downloadTextAudio() {
         const text = document.getElementById('textOutput').value;
         const targetLangIdx = document.getElementById('textTargetLang').value;
-        let langCode = languages[targetLangIdx].speechCode;
+        const langObj = languages[targetLangIdx];
+        
         if (!text) { showToast("沒有內容可下載"); return; }
-        if (text.length > 200) { showToast("文字過長，Google TTS 無法下載 (限200字)", "error"); return; }
-        if (langCode !== 'zh-TW') langCode = langCode.split('-')[0];
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
-        const a = document.createElement('a');
-        a.href = url; a.download = 'translation.mp3'; a.target = '_blank'; a.rel = 'noreferrer'; 
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+        if (langObj.isTaiwanese) {
+             const url = `https://hts.ithuan.tw/text-to-speech?query=${encodeURIComponent(text)}`;
+             const a = document.createElement('a');
+             a.href = url; a.download = 'taiwanese_audio.wav'; a.target = '_blank';
+             document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        } else {
+            let langCode = langObj.speechCode;
+            if (text.length > 200) { showToast("文字過長，Google TTS 無法下載 (限200字)", "error"); return; }
+            if (langCode !== 'zh-TW') langCode = langCode.split('-')[0];
+            const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
+            const a = document.createElement('a');
+            a.href = url; a.download = 'translation.mp3'; a.target = '_blank'; a.rel = 'noreferrer'; 
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
     }
 
     function startListening(side){
@@ -628,24 +729,49 @@
         if (isIOS) recognition = getSpeechRecognition(); else if (!recognition) recognition = getSpeechRecognition();
         activeMicSide=side; window.lastFinalTranscript = ''; window.lastInterimTranscript = '';
         const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
-        recognition.lang = (side === 'top') ? languages[topIdx].speechCode : languages[bottomIdx].speechCode;
+        let targetLang = (side === 'top') ? languages[topIdx] : languages[bottomIdx];
+        let speechCode = targetLang.speechCode;
+        if (targetLang.isTaiwanese) {
+            speechCode = 'zh-TW'; 
+            showToast("台語語音輸入功能受限，請嘗試用中文輸入或打字", "warning");
+        }
+        
+        recognition.lang = speechCode;
         document.getElementById(side+'OriginalText').innerText='...'; document.getElementById((side==='top'?'bottom':'top')+'TranslatedText').innerText='...';
         isListening = true; updateMicUI(true);
         try { recognition.start(); } catch(e) { if(e.name !== 'InvalidStateError') { isListening = false; updateMicUI(false); } }
     }
     function stopListening(){ if(recognition) recognition.stop(); isListening = false; updateMicUI(false); }
     function updateMicUI(l){ document.getElementById('topMicBtn').classList.toggle('listening',l&&activeMicSide==='top'); document.getElementById('bottomMicBtn').classList.toggle('listening',l&&activeMicSide==='bottom'); }
+    
     async function doVoiceTranslation(text, side){
-        const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
-        let sP, tP, out, speechLang;
-        if(side==='top'){ sP=languages[topIdx].prompt; tP=languages[bottomIdx].prompt; out='bottomTranslatedText'; speechLang=languages[bottomIdx].speechCode; } 
-        else { sP=languages[bottomIdx].prompt; tP=languages[topIdx].prompt; out='topTranslatedText'; speechLang=languages[topIdx].speechCode; }
-        const r=await callGeminiAPI(text, sP, tP);
+        const topIdx = document.getElementById('voiceTopLang').value; 
+        const bottomIdx = document.getElementById('voiceBottomLang').value;
+        let sIdx, tIdx, out, targetSpeechCode;
+        
+        if(side==='top'){ 
+            sIdx = topIdx; tIdx = bottomIdx; out='bottomTranslatedText'; 
+        } else { 
+            sIdx = bottomIdx; tIdx = topIdx; out='topTranslatedText'; 
+        }
+        targetSpeechCode = languages[tIdx].speechCode;
+
+        const r = await smartTranslate(text, sIdx, tIdx);
         document.getElementById(out).innerText=r;
-        if(!r.startsWith("[")) speakText(r, speechLang);
+        
+        if(!r.startsWith("[")) {
+            speakText(r, targetSpeechCode);
+        }
     }
 
     function speakText(t, l) {
+        if (l === 'nan-TW') {
+            if (synth) synth.cancel();
+            const audio = new Audio(`https://hts.ithuan.tw/text-to-speech?query=${encodeURIComponent(t)}`);
+            audio.play().catch(e => showToast("播放台語失敗", "error"));
+            return;
+        }
+
         if (!synth) return; synth.cancel();
         const voices = synth.getVoices();
         if (voices.length === 0) { setTimeout(() => speakText(t, l), 100); return; }
