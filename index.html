@@ -73,7 +73,18 @@
 
         /* ================= 文字模式介面 ================= */
         #textModeContainer { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 20px; overflow-y: auto; }
-        .text-card { background-color: var(--card-bg); width: 100%; max-width: 600px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        
+        /* 修改部分：使工作方框自動縮放並左右滿版 */
+        .text-card { 
+            background-color: var(--card-bg); 
+            width: 100%; 
+            max-width: 1200px; /* 大螢幕下的最大寬度限制 */
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+            margin: 0 auto;
+        }
+        
         h2.app-title { text-align: center; color: var(--primary-color); margin-bottom: 5px; font-size: 1.5rem;}
         .app-subtitle { text-align: center; color: #000; margin-bottom: 20px; font-size: 0.75rem; font-weight: normal; }
         .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; }
@@ -556,7 +567,6 @@
         showToast("翻譯失敗: 額度不足或無可用模型", "error"); return `[系統訊息] ${lastError}`;
     }
 
-    // 新增：偵測語言功能
     async function detectLanguage(text) {
         const langNames = languages.map(l => l.prompt).join(', ');
         const prompt = `Identify the language of the following text. Choose ONLY ONE from this list: [${langNames}]. Output only the language name. Text: "${text}"`;
@@ -584,12 +594,10 @@
         b.disabled=true; l.style.display='block'; o.value='';
 
         try{
-            // 自動偵測語言並更新下拉選單
             const detectedIdx = await detectLanguage(i.value);
             if (detectedIdx !== null && detectedIdx != sourceSelect.value) {
                 sourceSelect.value = detectedIdx;
                 showToast(`偵測到語言: ${languages[detectedIdx].name}`);
-                // 如果偵測出的語言與目標語言相同，自動將目標語言換成對方的原選單 (簡單防錯)
                 if (sourceSelect.value == targetSelect.value) {
                     targetSelect.value = (detectedIdx == 0) ? 1 : 0;
                 }
