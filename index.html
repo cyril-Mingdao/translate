@@ -74,10 +74,11 @@
         /* ================= 文字模式介面 ================= */
         #textModeContainer { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 20px; overflow-y: auto; }
         
+        /* 修改部分：使工作方框自動縮放並左右滿版 */
         .text-card { 
             background-color: var(--card-bg); 
             width: 100%; 
-            max-width: 1200px; 
+            max-width: 1200px; /* 大螢幕下的最大寬度限制 */
             padding: 25px; 
             border-radius: 20px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
@@ -454,126 +455,42 @@
     }
     function syncLanguages(source) {}
     
-    // ================= Debug 修正區 (iOS 優化) =================
     function getSpeechRecognition() {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) return null;
         const recog = new SR();
-        
-        // iOS Safari 對於 continuous 的支援極差，必須設為 false
-        recog.continuous = false; 
+        recog.continuous = !isIOS; 
         recog.interimResults = true;
-        
-        // 動態根據當前按下的側邊設置語言
-        recog.lang = (activeMicSide === 'top') ? 
-            languages[document.getElementById('voiceTopLang').value].speechCode : 
-            languages[document.getElementById('voiceBottomLang').value].speechCode;
-
         recog.onresult = (e) => {
             let interim = '', final = '';
-            for(let i=e.resultIndex; i<e.results.length; ++i){ 
-                if(e.results[i].isFinal) final += e.results[i][0].transcript; 
-                else interim += e.results[i][0].transcript; 
+            for(let i=e.resultIndex;i<e.results.length;++i){ 
+                if(e.results[i].isFinal) final+=e.results[i][0].transcript; 
+                else interim+=e.results[i][0].transcript; 
             }
-            const id = activeMicSide === 'top' ? 'topOriginalText' : 'bottomOriginalText'; 
-            if (final || interim) {
-                document.getElementById(id).innerText = final || interim;
-            }
+            const id=activeMicSide==='top'?'topOriginalText':'bottomOriginalText'; 
+            document.getElementById(id).innerText = final || interim || '...';
             if(final) window.lastFinalTranscript = final;
             if(interim) window.lastInterimTranscript = interim; 
         };
-
         recog.onerror = (e) => { 
-            console.error("SR Error:", e.error);
             if (e.error !== 'no-speech') stopListening(); 
+            if(e.error === 'not-allowed') showToast("無法存取麥克風，請檢查權限", "error");
         };
-
         recog.onend = () => { 
-            isListening = false; 
-            updateMicUI(false);
-            // 優先取 final，若 iOS 未標記 final 則取 interim 作為 fallback
-            let textToTranslate = window.lastFinalTranscript || window.lastInterimTranscript;
-            if(textToTranslate && activeMicSide) { 
-                doVoiceTranslation(textToTranslate, activeMicSide); 
-                window.lastFinalTranscript = ''; 
-                window.lastInterimTranscript = ''; 
-            } 
+            isListening = false; updateMicUI(false);
+            let textToTranslate = window.lastFinalTranscript;
+            if (!textToTranslate && isIOS && window.lastInterimTranscript) textToTranslate = window.lastInterimTranscript; 
+            if(textToTranslate && activeMicSide) { doVoiceTranslation(textToTranslate, activeMicSide); window.lastFinalTranscript = ''; window.lastInterimTranscript = ''; } 
         };
         return recog;
-    }
-
-    function initDraggableMic(btnId, side) {
-        const btn = document.getElementById(btnId);
-        let startX, startY, startLeft, startTop;
-        let isDragging = false;
-        let dragThreshold = 10;
-        let isPressing = false;
-
-        const handleStart = (e) => {
-            // iOS 必須在點擊瞬間初始化或重置語音狀態以解鎖權限
-            if(synth) { synth.cancel(); }
-            
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            startX = clientX; startY = clientY;
-            startLeft = btn.offsetLeft; startTop = btn.offsetTop;
-            
-            isDragging = false; 
-            isPressing = true;
-            
-            // 增加微小延遲以利 UI 反饋，並啟動錄音
-            setTimeout(() => {
-                if(isPressing && !isDragging) startListening(side);
-            }, 50);
-        };
-
-        const handleMove = (e) => {
-            if(!isPressing) return;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const deltaX = clientX - startX;
-            const deltaY = clientY - startY;
-
-            if (!isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) { 
-                isDragging = true; 
-                stopListening(); 
-            }
-            if (isDragging) {
-                if(e.type === 'touchmove') e.preventDefault();
-                if (side === 'top') { 
-                    btn.style.left = (startLeft - deltaX) + 'px'; 
-                    btn.style.top = (startTop - deltaY) + 'px'; 
-                } else { 
-                    btn.style.left = (startLeft + deltaX) + 'px'; 
-                    btn.style.top = (startTop + deltaY) + 'px'; 
-                }
-            }
-        };
-
-        const handleEnd = (e) => {
-            if (!isPressing) return;
-            isPressing = false; 
-            // 確保放開時明確停止，從而觸發 onend 回調進行翻譯
-            if (isListening) {
-                stopListening();
-            }
-            isDragging = false; 
-        };
-
-        btn.addEventListener('mousedown', handleStart);
-        btn.addEventListener('mousemove', handleMove);
-        window.addEventListener('mouseup', handleEnd);
-        
-        btn.addEventListener('touchstart', handleStart, {passive: false}); 
-        btn.addEventListener('touchmove', handleMove, {passive: false});
-        window.addEventListener('touchend', handleEnd, {passive: false});
     }
 
     function checkSpeechSupport(){
         if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
             showToast("請用 Chrome","error");document.getElementById('voiceModeBtn').disabled=true;
-        } 
-        // 移除不必要的非 iOS 初始化邏輯，統一由 handleStart 動態實例化
+        } else if(!isIOS) {
+            recognition = getSpeechRecognition();
+        }
     }
 
     function switchMode(m){
@@ -583,6 +500,43 @@
         document.getElementById('textModeContainer').style.display=m==='text'?'flex':'none';
         document.getElementById('voiceMirroredContainer').style.display=m==='voice'?'flex':'none';
         handleResize();
+    }
+
+    function initDraggableMic(btnId, side) {
+        const btn = document.getElementById(btnId);
+        let startX, startY, startLeft, startTop;
+        let isDragging = false;
+        let dragThreshold = 10;
+        let isPressing = false;
+        const handleStart = (e) => {
+            if(synth) { synth.cancel(); const empty = new SpeechSynthesisUtterance(" "); empty.volume = 0; empty.duration = 0.1; synth.speak(empty); }
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX; startY = clientY;
+            startLeft = btn.offsetLeft; startTop = btn.offsetTop;
+            isDragging = false; isPressing = true;
+            startListening(side);
+        };
+        const handleMove = (e) => {
+            if(!isPressing) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
+            if (!isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) { isDragging = true; stopListening(); }
+            if (isDragging) {
+                if(e.type === 'touchmove') e.preventDefault();
+                if (side === 'top') { btn.style.left = (startLeft - deltaX) + 'px'; btn.style.top = (startTop - deltaY) + 'px'; } 
+                else { btn.style.left = (startLeft + deltaX) + 'px'; btn.style.top = (startTop + deltaY) + 'px'; }
+            }
+        };
+        const handleEnd = () => { isPressing = false; if (!isDragging) stopListening(); isDragging = false; };
+        btn.addEventListener('mousedown', handleStart);
+        btn.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+        btn.addEventListener('touchstart', handleStart, {passive: false}); 
+        btn.addEventListener('touchmove', handleMove, {passive: false});
+        window.addEventListener('touchend', handleEnd);
     }
 
     async function callGeminiAPI(text, sP, tP) {
@@ -679,20 +633,16 @@
 
     function startListening(side){
         if(isListening) return;
-        recognition = getSpeechRecognition(); // 每次啟動前實例化，確保獲得最新配置
+        if (isIOS) { if(recognition) recognition.abort(); recognition = getSpeechRecognition(); } else if (!recognition) recognition = getSpeechRecognition();
         activeMicSide=side; window.lastFinalTranscript = ''; window.lastInterimTranscript = '';
-        
-        document.getElementById(side+'OriginalText').innerText='...'; 
-        document.getElementById((side==='top'?'bottom':'top')+'TranslatedText').innerText='...';
-        
-        isListening = true; 
-        updateMicUI(true);
-        try { recognition.start(); } catch(e) { console.error("Start Error:", e); isListening = false; updateMicUI(false); }
+        const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
+        recognition.lang = (side === 'top') ? languages[topIdx].speechCode : languages[bottomIdx].speechCode;
+        document.getElementById(side+'OriginalText').innerText='...'; document.getElementById((side==='top'?'bottom':'top')+'TranslatedText').innerText='...';
+        isListening = true; updateMicUI(true);
+        try { recognition.start(); } catch(e) { if(e.name !== 'InvalidStateError') { isListening = false; updateMicUI(false); } }
     }
-    
-    function stopListening(){ if(recognition) { recognition.stop(); } isListening = false; updateMicUI(false); }
+    function stopListening(){ if(recognition) recognition.stop(); isListening = false; updateMicUI(false); }
     function updateMicUI(l){ document.getElementById('topMicBtn').classList.toggle('listening',l&&activeMicSide==='top'); document.getElementById('bottomMicBtn').classList.toggle('listening',l&&activeMicSide==='bottom'); }
-    
     async function doVoiceTranslation(text, side){
         const topIdx = document.getElementById('voiceTopLang').value; const bottomIdx = document.getElementById('voiceBottomLang').value;
         let sP, tP, out, speechLang;
