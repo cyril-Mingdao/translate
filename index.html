@@ -1319,6 +1319,72 @@
         let isDragging = false;
         let dragThreshold = 10;
         let isPressing = false;
+
+        /* === iOS 專用修復 === */
+        /* iOS Safari 中 touchstart (passive:false) + touch-action:none 會導致 */
+        /* 瀏覽器無法將觸控視為有效的使用者手勢，因而阻擋麥克風權限請求。 */
+        /* 改用 click 事件（iOS 會在 tap 後合成 click）來啟動語音辨識。 */
+        if (isIOS) {
+          let iosTouchMoved = false;
+          btn.addEventListener("touchstart", function (e) {
+            iosTouchMoved = false;
+            if (synth) {
+              synth.cancel();
+              var empty = new SpeechSynthesisUtterance(" ");
+              empty.volume = 0;
+              empty.duration = 0.1;
+              synth.speak(empty);
+            }
+            var touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startLeft = btn.offsetLeft;
+            startTop = btn.offsetTop;
+            isDragging = false;
+            isPressing = true;
+          }, { passive: true });
+
+          btn.addEventListener("touchmove", function (e) {
+            if (!isPressing) return;
+            var touch = e.touches[0];
+            var deltaX = touch.clientX - startX;
+            var deltaY = touch.clientY - startY;
+            if (!isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) {
+              isDragging = true;
+              iosTouchMoved = true;
+              stopListening();
+            }
+            if (isDragging) {
+              e.preventDefault();
+              if (side === "top") {
+                btn.style.left = startLeft - deltaX + "px";
+                btn.style.top = startTop - deltaY + "px";
+              } else {
+                btn.style.left = startLeft + deltaX + "px";
+                btn.style.top = startTop + deltaY + "px";
+              }
+            }
+          }, { passive: false });
+
+          window.addEventListener("touchend", function () {
+            if (isPressing) {
+              isPressing = false;
+              if (!isDragging) stopListening();
+              isDragging = false;
+            }
+          });
+
+          /* iOS 上以 click 啟動語音辨識，確保瀏覽器認定為使用者手勢 */
+          btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            if (iosTouchMoved) { iosTouchMoved = false; return; }
+            startListening(side);
+          });
+
+          return; /* iOS 路徑結束，不執行下方非 iOS 邏輯 */
+        }
+        /* === iOS 修復結束 === */
+
         const handleStart = (e) => {
           if (synth) {
             synth.cancel();
