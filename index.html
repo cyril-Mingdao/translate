@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>AI 智能翻譯機 (v52.0)</title>
+    <title>AI 智能翻譯機 (V53.0)</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
@@ -373,6 +373,98 @@
         transform: scale(1.1);
       }
 
+      .mic-input-btn {
+        position: absolute;
+        top: 10px;
+        right: 50px;
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+        z-index: 100;
+        pointer-events: auto;
+      }
+      .mic-input-btn:hover {
+        background: #e8f0fe;
+        color: var(--primary-color);
+        transform: scale(1.1);
+      }
+      .mic-input-btn.listening {
+        background: var(--danger-color);
+        color: #fff;
+        animation: pulse-scale 1.5s infinite;
+      }
+      @keyframes pulse-scale {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.15);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .copy-input-btn,
+      .paste-input-btn {
+        position: absolute;
+        top: 10px;
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        transition: all 0.2s;
+        z-index: 100;
+        pointer-events: auto;
+      }
+      .copy-input-btn:hover,
+      .paste-input-btn:hover {
+        background: #e8f0fe;
+        color: var(--primary-color);
+        transform: scale(1.1);
+      }
+      .copy-input-btn {
+        right: 90px;
+      }
+      .paste-input-btn {
+        right: 130px;
+      }
+
+      .copy-output-btn {
+        position: absolute;
+        bottom: 25px;
+        right: 90px;
+        background: none;
+        border: none;
+        color: #555;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 5px;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+      }
+      .copy-output-btn:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        color: var(--primary-color);
+      }
+
       .output-box {
         background-color: #f8f9fa;
         color: #444;
@@ -487,6 +579,9 @@
         flex: none;
         min-height: 20%;
         max-height: 80%;
+      }
+      .top-half.flipped-normal {
+        transform: rotate(0deg);
       }
       .bottom-half {
         background-color: var(--mirrored-bg-bottom);
@@ -691,6 +786,15 @@
       <button class="ctrl-btn" onclick="openSettings()" title="設定">
         <span>設定</span><i class="fas fa-cog"></i>
       </button>
+      <button
+        class="ctrl-btn"
+        onclick="toggleFlipTop()"
+        id="voiceFlipBtn"
+        title="翻轉對方對話框方向"
+        style="display: none"
+      >
+        <span>翻轉</span><i class="fas fa-arrows-rotate"></i>
+      </button>
     </div>
 
     <div id="settingsModal" class="modal-overlay">
@@ -762,11 +866,12 @@
       </div>
     </div>
     <div id="toast-container"></div>
+    <audio id="taigiAudioPlayer" style="display: none"></audio>
 
     <div id="textModeContainer">
       <div class="text-card">
         <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (v52.0)
+          <i class="fas fa-robot"></i> AI 智能翻譯機 (V53.0)
         </h2>
         <div class="app-subtitle">詹宗龍 製作</div>
         <div id="model-selector-container">
@@ -787,6 +892,28 @@
             id="textInput"
             placeholder="請輸入要翻譯的文字..."
           ></textarea>
+          <button
+            class="mic-input-btn"
+            id="textMicBtn"
+            onclick="toggleTextVoiceInput()"
+            title="語音輸入"
+          >
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button
+            class="copy-input-btn"
+            onclick="copyTextValue('textInput')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
+          <button
+            class="paste-input-btn"
+            onclick="pasteTextInput()"
+            title="貼上文字"
+          >
+            <i class="fas fa-paste"></i>
+          </button>
           <button class="clear-btn" onclick="clearTextInput()" title="清空文字">
             <i class="fas fa-trash-alt"></i>
           </button>
@@ -812,6 +939,13 @@
             title="朗讀翻譯結果"
           >
             <i class="fas fa-volume-up"></i>
+          </button>
+          <button
+            class="copy-output-btn"
+            onclick="copyTextValue('textOutput')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
           </button>
         </div>
         <button
@@ -918,11 +1052,121 @@
       let userApiKey = "";
       let userBaseUrl = "https://generativelanguage.googleapis.com";
       let selectedModel = "";
+
+      // ================= 陽明交大 SARC 台語語音合成 =================
+      // 來源：陽明交大 Speech AI Research Center「Taiwanese Speech Synthesis」展示網站
+      // (https://sites.google.com/nycu.edu.tw/sarc/tw-nlai/demonstrations)。
+      // 免費雛形展示系統，以「現況」提供、不附保證亦無正式支援，教材/公開使用請標示語音來源。
+      // 輸入格式為台羅拼音數字調(TLPA，非調符式)，例：sin1-ni5 beh4 kau3--ah4。
+      const NYCU_TTS_URL = "http://tts001.ivoice.tw:8804/synthesize_TLPA";
+      const NYCU_TTS_GENDER = "女聲";
+      const NYCU_TTS_ACCENT = "強勢腔（高雄腔）";
+      const NYCU_TTS_MIN_INTERVAL_MS = 5000;
+      let lastNycuTtsRequestTime = 0;
+
+      // 解鎖 <audio> 元素：許多瀏覽器(尤其 iOS Safari)要求 play() 必須緊接在
+      // 使用者手勢之後同步呼叫；我們的合成流程中間隔了一次非同步的 API 請求，
+      // 事後呼叫 play() 常會被靜默擋下。作法是在使用者「第一次」點擊/觸碰畫面時，
+      // 立刻同步播放一段極短靜音音檔「解鎖」該 <audio> 元素，之後同一元素即可在
+      // 非同步流程中正常換源播放。
+      const TTS_SILENT_AUDIO =
+        "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+      let ttsAudioUnlocked = false;
+      function unlockTtsAudioPlayer() {
+        if (ttsAudioUnlocked) return;
+        const player = document.getElementById("taigiAudioPlayer");
+        player.src = TTS_SILENT_AUDIO;
+        const p = player.play();
+        if (p && p.catch) p.catch(() => {});
+        ttsAudioUnlocked = true;
+      }
+
+      function setTtsAudioSrc(url) {
+        const player = document.getElementById("taigiAudioPlayer");
+        player.pause();
+        player.removeAttribute("src");
+        player.innerHTML = "";
+        const source = document.createElement("source");
+        source.src = url;
+        source.type = "audio/wav";
+        player.appendChild(source);
+        player.load();
+        return player;
+      }
+
+      function buildNycuTtsUrl(tlpa) {
+        return (
+          `${NYCU_TTS_URL}?text1=${encodeURIComponent(tlpa)}` +
+          `&gender=${encodeURIComponent(NYCU_TTS_GENDER)}` +
+          `&accent=${encodeURIComponent(NYCU_TTS_ACCENT)}`
+        );
+      }
+
+      async function textToTaiiloTlpa(text) {
+        const prompt = `Convert the following Taiwanese Hokkien (Tai-gi) text into Tai-uan Lo-ma-ji Phing-im (TLPA) romanization using NUMBERED tones (1-8), NOT tone diacritics. Rules: syllables within the same word are joined by a single hyphen (e.g. sin1-ni5); a following neutral/reduced-tone syllable is joined with a DOUBLE hyphen (e.g. kau3--ah4); separate words with spaces; keep original punctuation (，。？！) at clause/sentence end. Output ONLY the romanized text, no Chinese characters, no explanation. Example: 新年欲到矣，咱來去買年菜好無？ -> sin1-ni5 beh4 kau3--ah4, lan2 lai5-khi3 be2 ni5-tshai3 ho2--bo5? Text: "${text}"`;
+        const res = await fetch(
+          `${userBaseUrl}/v1beta/models/${selectedModel || "gemini-1.5-flash"}:generateContent?key=${userApiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          },
+        );
+        if (!res.ok) throw new Error("臺羅拼音轉換失敗");
+        const data = await res.json();
+        if (!data.candidates) throw new Error("臺羅拼音轉換失敗");
+        return data.candidates[0].content.parts[0].text.trim();
+      }
+
+      async function speakNycu(text) {
+        if (!userApiKey) {
+          showToast("請先設定 API Key 才能使用台語語音", "error");
+          return false;
+        }
+        const waitMs =
+          NYCU_TTS_MIN_INTERVAL_MS - (Date.now() - lastNycuTtsRequestTime);
+        if (waitMs > 0) {
+          showToast(
+            `台語語音服務冷卻中，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
+            "error",
+          );
+          return false;
+        }
+        try {
+          showToast("正在合成台語語音…");
+          const tlpa = await textToTaiiloTlpa(text);
+          lastNycuTtsRequestTime = Date.now();
+          const url = buildNycuTtsUrl(tlpa);
+          const player = setTtsAudioSrc(url);
+          await player.play();
+          return true;
+        } catch (e) {
+          showToast("台語語音合成失敗: " + e.message, "error");
+          return false;
+        }
+      }
+
+      // 依語言代碼分派：臺灣台語走意傳媠聲，其餘語言走瀏覽器內建語音
+      async function smartSpeak(text, langCode) {
+        if (langCode === "nan-TW") {
+          await speakNycu(text);
+        } else {
+          speakText(text, langCode);
+        }
+      }
       const languages = [
         {
           name: "繁體中文",
           prompt: "Traditional Chinese",
           speechCode: "zh-TW",
+        },
+        {
+          name: "臺灣台語 (Tâi-gí)",
+          prompt:
+            "Taiwanese Hokkien (Tâi-gí), written in the mixed script style used by Taiwan's Ministry of Education — Traditional Chinese characters combined with Tâi-lô (KIP) romanization for words without a common character form",
+          speechCode: "nan-TW",
         },
         { name: "English (英語)", prompt: "English", speechCode: "en-US" },
         { name: "日本語 (日語)", prompt: "Japanese", speechCode: "ja-JP" },
@@ -1087,6 +1331,12 @@
         initDraggableMic("bottomMicBtn", "bottom");
         initSplitter();
         setupTextPlayback();
+        document.addEventListener("click", unlockTtsAudioPlayer, {
+          once: true,
+        });
+        document.addEventListener("touchend", unlockTtsAudioPlayer, {
+          once: true,
+        });
 
         document
           .getElementById("textInput")
@@ -1126,10 +1376,100 @@
             if (text && text !== "...") {
               const langIndex = item.getLangIdx();
               const langCode = languages[langIndex].speechCode;
-              speakText(text, langCode);
+              smartSpeak(text, langCode);
             }
           });
         });
+      }
+
+      // ================= 文字模式：語音輸入 =================
+      let textRecognition = null;
+      let isTextListening = false;
+      function toggleTextVoiceInput() {
+        if (isTextListening) {
+          stopTextVoiceInput();
+        } else {
+          startTextVoiceInput();
+        }
+      }
+      function startTextVoiceInput() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+          showToast("請用 Chrome 使用語音輸入", "error");
+          return;
+        }
+        textRecognition = new SR();
+        textRecognition.continuous = !isIOS;
+        textRecognition.interimResults = true;
+        const srcIdx = document.getElementById("textSourceLang").value;
+        textRecognition.lang = languages[srcIdx].speechCode;
+
+        const inputEl = document.getElementById("textInput");
+        const baseText = inputEl.value.trim()
+          ? inputEl.value.trim() + " "
+          : "";
+        textRecognition.onresult = (e) => {
+          let interim = "",
+            final = "";
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+            else interim += e.results[i][0].transcript;
+          }
+          inputEl.value = baseText + final + interim;
+        };
+        textRecognition.onerror = (e) => {
+          if (e.error === "not-allowed")
+            showToast("無法存取麥克風，請檢查權限", "error");
+          if (e.error !== "no-speech") stopTextVoiceInput();
+        };
+        textRecognition.onend = () => {
+          isTextListening = false;
+          document.getElementById("textMicBtn").classList.remove("listening");
+          if (inputEl.value.trim()) doTextTranslation();
+        };
+        try {
+          textRecognition.start();
+          isTextListening = true;
+          document.getElementById("textMicBtn").classList.add("listening");
+        } catch (e) {
+          isTextListening = false;
+        }
+      }
+      function stopTextVoiceInput() {
+        if (textRecognition) textRecognition.stop();
+        isTextListening = false;
+        document.getElementById("textMicBtn").classList.remove("listening");
+      }
+
+      function copyTextValue(elementId) {
+        const el = document.getElementById(elementId);
+        const text = el.value;
+        if (!text) {
+          showToast("沒有文字可複製");
+          return;
+        }
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            showToast("已複製到剪貼簿");
+          })
+          .catch(() => {
+            showToast("複製失敗", "error");
+          });
+      }
+
+      async function pasteTextInput() {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (!text) {
+            showToast("剪貼簿無文字內容");
+            return;
+          }
+          document.getElementById("textInput").value = text;
+          showToast("已貼上文字");
+        } catch (e) {
+          showToast("貼上失敗，請確認瀏覽器剪貼簿權限", "error");
+        }
       }
 
       function clearTextInput() {
@@ -1241,8 +1581,8 @@
           });
         });
         document.getElementById("textSourceLang").selectedIndex = 0;
-        document.getElementById("textTargetLang").selectedIndex = 1;
-        document.getElementById("voiceTopLang").selectedIndex = 1;
+        document.getElementById("textTargetLang").selectedIndex = 2;
+        document.getElementById("voiceTopLang").selectedIndex = 2;
         document.getElementById("voiceBottomLang").selectedIndex = 0;
       }
       function syncLanguages(source) {}
@@ -1310,7 +1650,20 @@
           m === "text" ? "flex" : "none";
         document.getElementById("voiceMirroredContainer").style.display =
           m === "voice" ? "flex" : "none";
+        document.getElementById("voiceFlipBtn").style.display =
+          m === "voice" ? "flex" : "none";
         handleResize();
+      }
+
+      let isTopFlipped = false;
+      function toggleFlipTop() {
+        isTopFlipped = !isTopFlipped;
+        document
+          .getElementById("topHalf")
+          .classList.toggle("flipped-normal", isTopFlipped);
+        document
+          .getElementById("voiceFlipBtn")
+          .classList.toggle("active", isTopFlipped);
       }
 
       function initDraggableMic(btnId, side) {
@@ -1578,11 +1931,11 @@
       function playTextTranslation() {
         const text = document.getElementById("textOutput").value;
         const targetLangIdx = document.getElementById("textTargetLang").value;
-        if (text) speakText(text, languages[targetLangIdx].speechCode);
+        if (text) smartSpeak(text, languages[targetLangIdx].speechCode);
         else showToast("沒有可播放的文字");
       }
 
-      function downloadTextAudio() {
+      async function downloadTextAudio() {
         const text = document.getElementById("textOutput").value;
         const targetLangIdx = document.getElementById("textTargetLang").value;
         let langCode = languages[targetLangIdx].speechCode;
@@ -1591,7 +1944,39 @@
           return;
         }
         if (text.length > 200) {
-          showToast("文字過長，Google TTS 無法下載 (限200字)", "error");
+          showToast("文字過長，無法下載 (限200字)", "error");
+          return;
+        }
+        if (langCode === "nan-TW") {
+          if (!userApiKey) {
+            showToast("請先設定 API Key 才能下載台語語音", "error");
+            return;
+          }
+          const waitMs =
+            NYCU_TTS_MIN_INTERVAL_MS - (Date.now() - lastNycuTtsRequestTime);
+          if (waitMs > 0) {
+            showToast(
+              `台語語音服務冷卻中，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
+              "error",
+            );
+            return;
+          }
+          try {
+            showToast("正在合成台語語音…");
+            const tlpa = await textToTaiiloTlpa(text);
+            lastNycuTtsRequestTime = Date.now();
+            const url = buildNycuTtsUrl(tlpa);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "translation_taigi.wav";
+            a.target = "_blank";
+            a.rel = "noreferrer";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          } catch (e) {
+            showToast("台語語音合成失敗: " + e.message, "error");
+          }
           return;
         }
         if (langCode !== "zh-TW") langCode = langCode.split("-")[0];
@@ -1666,7 +2051,7 @@
         }
         const r = await callGeminiAPI(text, sP, tP);
         document.getElementById(out).innerText = r;
-        if (!r.startsWith("[")) speakText(r, speechLang);
+        if (!r.startsWith("[")) smartSpeak(r, speechLang);
       }
 
       function speakText(t, l) {
