@@ -1103,7 +1103,8 @@
         try {
           showToast("正在合成台語語音…");
           const tailo = await textToTaiiloTlpa(text);
-          holo(el || null, tailo);
+          // skipStart/skipEnd 修剪每個字音檔前後的靜音，讓字與字之間盡量無縫接軌。
+          holo(el || null, tailo, { skipStart: 0.08, skipEnd: 0.3 });
           return true;
         } catch (e) {
           showToast("台語語音合成失敗: " + e.message, "error");
