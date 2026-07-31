@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>AI 智能翻譯機 (V53.0)</title>
+    <title>AI 智能翻譯機 (V54.0)</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
@@ -15,6 +15,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
+    <script src="https://oikasu1.github.io/snd/snd.js"></script>
     <style>
       /* ================= 全域設定 ================= */
       :root {
@@ -866,12 +867,11 @@
       </div>
     </div>
     <div id="toast-container"></div>
-    <audio id="taigiAudioPlayer" style="display: none"></audio>
 
     <div id="textModeContainer">
       <div class="text-card">
         <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (V53.0)
+          <i class="fas fa-robot"></i> AI 智能翻譯機 (V54.0)
         </h2>
         <div class="app-subtitle">詹宗龍 製作</div>
         <div id="model-selector-container">
@@ -935,7 +935,7 @@
           </button>
           <button
             class="play-btn"
-            onclick="playTextTranslation()"
+            onclick="playTextTranslation(this)"
             title="朗讀翻譯結果"
           >
             <i class="fas fa-volume-up"></i>
@@ -1064,36 +1064,6 @@
       const NYCU_TTS_MIN_INTERVAL_MS = 5000;
       let lastNycuTtsRequestTime = 0;
 
-      // 解鎖 <audio> 元素：許多瀏覽器(尤其 iOS Safari)要求 play() 必須緊接在
-      // 使用者手勢之後同步呼叫；我們的合成流程中間隔了一次非同步的 API 請求，
-      // 事後呼叫 play() 常會被靜默擋下。作法是在使用者「第一次」點擊/觸碰畫面時，
-      // 立刻同步播放一段極短靜音音檔「解鎖」該 <audio> 元素，之後同一元素即可在
-      // 非同步流程中正常換源播放。
-      const TTS_SILENT_AUDIO =
-        "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
-      let ttsAudioUnlocked = false;
-      function unlockTtsAudioPlayer() {
-        if (ttsAudioUnlocked) return;
-        const player = document.getElementById("taigiAudioPlayer");
-        player.src = TTS_SILENT_AUDIO;
-        const p = player.play();
-        if (p && p.catch) p.catch(() => {});
-        ttsAudioUnlocked = true;
-      }
-
-      function setTtsAudioSrc(url) {
-        const player = document.getElementById("taigiAudioPlayer");
-        player.pause();
-        player.removeAttribute("src");
-        player.innerHTML = "";
-        const source = document.createElement("source");
-        source.src = url;
-        source.type = "audio/wav";
-        player.appendChild(source);
-        player.load();
-        return player;
-      }
-
       function buildNycuTtsUrl(tlpa) {
         return (
           `${NYCU_TTS_URL}?text1=${encodeURIComponent(tlpa)}` +
@@ -1103,7 +1073,10 @@
       }
 
       async function textToTaiiloTlpa(text) {
-        const prompt = `Convert the following Taiwanese Hokkien (Tai-gi) text into Tai-uan Lo-ma-ji Phing-im (TLPA) romanization using NUMBERED tones (1-8), NOT tone diacritics. Rules: syllables within the same word are joined by a single hyphen (e.g. sin1-ni5); a following neutral/reduced-tone syllable is joined with a DOUBLE hyphen (e.g. kau3--ah4); separate words with spaces; keep original punctuation (，。？！) at clause/sentence end. Output ONLY the romanized text, no Chinese characters, no explanation. Example: 新年欲到矣，咱來去買年菜好無？ -> sin1-ni5 beh4 kau3--ah4, lan2 lai5-khi3 be2 ni5-tshai3 ho2--bo5? Text: "${text}"`;
+        // 翻譯結果可能已含「漢字(台羅)」括號標註，轉換發音前先去除括號註記，
+        // 避免括號內容干擾 Gemini 的臺羅轉換。
+        const cleanText = text.replace(/[（(][^）)]*[）)]/g, "");
+        const prompt = `Convert the following Taiwanese Hokkien (Tai-gi) text into Tai-uan Lo-ma-ji Phing-im (TLPA) romanization using NUMBERED tones (1-8), NOT tone diacritics. Rules: syllables within the same word are joined by a single hyphen (e.g. sin1-ni5); a following neutral/reduced-tone syllable is joined with a DOUBLE hyphen (e.g. kau3--ah4); separate words with spaces; keep original punctuation (，。？！) at clause/sentence end. Output ONLY the romanized text, no Chinese characters, no explanation. Example: 新年欲到矣，咱來去買年菜好無？ -> sin1-ni5 beh4 kau3--ah4, lan2 lai5-khi3 be2 ni5-tshai3 ho2--bo5? Text: "${cleanText}"`;
         const res = await fetch(
           `${userBaseUrl}/v1beta/models/${selectedModel || "gemini-1.5-flash"}:generateContent?key=${userApiKey}`,
           {
@@ -1120,27 +1093,17 @@
         return data.candidates[0].content.parts[0].text.trim();
       }
 
-      async function speakNycu(text) {
+      // 台語音檔播放：改用 snd.js 的 holo(el, url) 播放教育部辭典音檔，
+      // url 為臺羅拼音（數字調或調符式皆可），el 為觸發按鈕(供圖示切換用，可傳 null)。
+      async function speakHolo(text, el) {
         if (!userApiKey) {
           showToast("請先設定 API Key 才能使用台語語音", "error");
           return false;
         }
-        const waitMs =
-          NYCU_TTS_MIN_INTERVAL_MS - (Date.now() - lastNycuTtsRequestTime);
-        if (waitMs > 0) {
-          showToast(
-            `台語語音服務冷卻中，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
-            "error",
-          );
-          return false;
-        }
         try {
           showToast("正在合成台語語音…");
-          const tlpa = await textToTaiiloTlpa(text);
-          lastNycuTtsRequestTime = Date.now();
-          const url = buildNycuTtsUrl(tlpa);
-          const player = setTtsAudioSrc(url);
-          await player.play();
+          const tailo = await textToTaiiloTlpa(text);
+          holo(el || null, tailo);
           return true;
         } catch (e) {
           showToast("台語語音合成失敗: " + e.message, "error");
@@ -1148,10 +1111,10 @@
         }
       }
 
-      // 依語言代碼分派：臺灣台語走意傳媠聲，其餘語言走瀏覽器內建語音
-      async function smartSpeak(text, langCode) {
+      // 依語言代碼分派：臺灣台語走 holo (snd.js)，其餘語言走瀏覽器內建語音
+      async function smartSpeak(text, langCode, el) {
         if (langCode === "nan-TW") {
-          await speakNycu(text);
+          await speakHolo(text, el);
         } else {
           speakText(text, langCode);
         }
@@ -1165,7 +1128,7 @@
         {
           name: "臺灣台語 (Tâi-gí)",
           prompt:
-            "Taiwanese Hokkien (Tâi-gí), written STRICTLY in the orthography of Taiwan's Ministry of Education (依教育部《臺灣台語常用詞辭典》用字規範): use the MOE-recommended Traditional Chinese character (漢字) for every word that has one, and Tâi-lô (KIP) romanization with tone diacritics ONLY for words that have no standard character. Do NOT use Pe̍h-ōe-jī (POJ / 白話字) spelling conventions anywhere (e.g. never write 'chh', 'ts', 'oa', 'o͘' — use Tâi-lô equivalents 'tsh', 'ts', 'ua', 'o' with the correct diacritic instead). Do not romanize a word that already has an MOE standard character just because it looks unfamiliar.",
+            "Taiwanese Hokkien (Tâi-gí). First write the ENTIRE sentence in Traditional Chinese characters (Ministry of Education standard usage). Then, immediately after the whole Chinese-character sentence, add its full Ministry of Education standard Tâi-lô (KIP) romanization with tone diacritics for the WHOLE sentence in a single parentheses — do NOT annotate word by word. Format: 漢字整句。(Tâi-lô tsn̂g-kù.) Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)",
           speechCode: "nan-TW",
         },
         { name: "English (英語)", prompt: "English", speechCode: "en-US" },
@@ -1331,12 +1294,6 @@
         initDraggableMic("bottomMicBtn", "bottom");
         initSplitter();
         setupTextPlayback();
-        document.addEventListener("click", unlockTtsAudioPlayer, {
-          once: true,
-        });
-        document.addEventListener("touchend", unlockTtsAudioPlayer, {
-          once: true,
-        });
 
         document
           .getElementById("textInput")
@@ -1376,7 +1333,7 @@
             if (text && text !== "...") {
               const langIndex = item.getLangIdx();
               const langCode = languages[langIndex].speechCode;
-              smartSpeak(text, langCode);
+              smartSpeak(text, langCode, el);
             }
           });
         });
@@ -1928,10 +1885,10 @@
           o.value = "";
         }
       }
-      function playTextTranslation() {
+      function playTextTranslation(btn) {
         const text = document.getElementById("textOutput").value;
         const targetLangIdx = document.getElementById("textTargetLang").value;
-        if (text) smartSpeak(text, languages[targetLangIdx].speechCode);
+        if (text) smartSpeak(text, languages[targetLangIdx].speechCode, btn);
         else showToast("沒有可播放的文字");
       }
 
@@ -2051,7 +2008,7 @@
         }
         const r = await callGeminiAPI(text, sP, tP);
         document.getElementById(out).innerText = r;
-        if (!r.startsWith("[")) smartSpeak(r, speechLang);
+        if (!r.startsWith("[")) smartSpeak(r, speechLang, document.getElementById(out));
       }
 
       function speakText(t, l) {
