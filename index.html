@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>AI 智能翻譯機 (V55.0)</title>
+    <title>AI 智能翻譯機 (V57.0)</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
@@ -328,6 +328,12 @@
       .input-wrapper {
         position: relative;
         width: 100%;
+        margin-bottom: 8px;
+      }
+      .input-btn-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
         margin-bottom: 15px;
       }
       textarea {
@@ -350,9 +356,6 @@
       }
 
       .clear-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
         background: rgba(240, 240, 240, 0.9);
         border: none;
         border-radius: 50%;
@@ -365,8 +368,6 @@
         justify-content: center;
         font-size: 16px;
         transition: all 0.2s;
-        z-index: 100;
-        pointer-events: auto;
       }
       .clear-btn:hover {
         background: #feebeb;
@@ -375,9 +376,6 @@
       }
 
       .mic-input-btn {
-        position: absolute;
-        top: 10px;
-        right: 50px;
         background: rgba(240, 240, 240, 0.9);
         border: none;
         border-radius: 50%;
@@ -390,8 +388,6 @@
         justify-content: center;
         font-size: 16px;
         transition: all 0.2s;
-        z-index: 100;
-        pointer-events: auto;
       }
       .mic-input-btn:hover {
         background: #e8f0fe;
@@ -417,8 +413,6 @@
 
       .copy-input-btn,
       .paste-input-btn {
-        position: absolute;
-        top: 10px;
         background: rgba(240, 240, 240, 0.9);
         border: none;
         border-radius: 50%;
@@ -431,8 +425,6 @@
         justify-content: center;
         font-size: 15px;
         transition: all 0.2s;
-        z-index: 100;
-        pointer-events: auto;
       }
       .copy-input-btn:hover,
       .paste-input-btn:hover {
@@ -440,30 +432,32 @@
         color: var(--primary-color);
         transform: scale(1.1);
       }
-      .copy-input-btn {
-        right: 90px;
-      }
-      .paste-input-btn {
-        right: 130px;
-      }
 
+      .output-btn-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 8px;
+        margin-bottom: 15px;
+      }
       .copy-output-btn {
-        position: absolute;
-        bottom: 25px;
-        right: 90px;
-        background: none;
+        background: rgba(240, 240, 240, 0.9);
         border: none;
-        color: #555;
-        font-size: 18px;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
         cursor: pointer;
-        padding: 5px;
-        opacity: 0.6;
-        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        transition: all 0.2s;
       }
       .copy-output-btn:hover {
-        opacity: 1;
-        transform: scale(1.1);
+        background: #e8f0fe;
         color: var(--primary-color);
+        transform: scale(1.1);
       }
 
       .output-box {
@@ -519,40 +513,42 @@
         position: relative;
       }
       .play-btn {
-        position: absolute;
-        bottom: 25px;
-        right: 10px;
-        background: none;
+        background: rgba(240, 240, 240, 0.9);
         border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
         color: var(--primary-color);
-        font-size: 20px;
         cursor: pointer;
-        padding: 5px;
-        opacity: 0.6;
-        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
       }
       .play-btn:hover {
-        opacity: 1;
+        background: #e8f0fe;
         transform: scale(1.1);
       }
 
       .download-btn {
-        position: absolute;
-        bottom: 25px;
-        right: 50px;
-        background: none;
+        background: rgba(240, 240, 240, 0.9);
         border: none;
-        color: #555;
-        font-size: 18px;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
         cursor: pointer;
-        padding: 5px;
-        opacity: 0.6;
-        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
       }
       .download-btn:hover {
-        opacity: 1;
-        transform: scale(1.1);
+        background: #e8f0fe;
         color: var(--primary-color);
+        transform: scale(1.1);
       }
 
       /* ================= 語音鏡像模式 ================= */
@@ -871,7 +867,7 @@
     <div id="textModeContainer">
       <div class="text-card">
         <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (V55.0)
+          <i class="fas fa-robot"></i> AI 智能翻譯機 (V57.0)
         </h2>
         <div class="app-subtitle">詹宗龍 製作</div>
         <div id="model-selector-container">
@@ -892,13 +888,14 @@
             id="textInput"
             placeholder="請輸入要翻譯的文字..."
           ></textarea>
+        </div>
+        <div class="input-btn-row">
           <button
-            class="mic-input-btn"
-            id="textMicBtn"
-            onclick="toggleTextVoiceInput()"
-            title="語音輸入"
+            class="paste-input-btn"
+            onclick="pasteTextInput()"
+            title="貼上文字"
           >
-            <i class="fas fa-microphone"></i>
+            <i class="fas fa-paste"></i>
           </button>
           <button
             class="copy-input-btn"
@@ -907,15 +904,16 @@
           >
             <i class="far fa-copy"></i>
           </button>
-          <button
-            class="paste-input-btn"
-            onclick="pasteTextInput()"
-            title="貼上文字"
-          >
-            <i class="fas fa-paste"></i>
-          </button>
           <button class="clear-btn" onclick="clearTextInput()" title="清空文字">
             <i class="fas fa-trash-alt"></i>
+          </button>
+          <button
+            class="mic-input-btn"
+            id="textMicBtn"
+            onclick="toggleTextVoiceInput()"
+            title="語音輸入"
+          >
+            <i class="fas fa-microphone"></i>
           </button>
         </div>
 
@@ -926,6 +924,15 @@
             placeholder="翻譯結果..."
             readonly
           ></textarea>
+        </div>
+        <div class="output-btn-row">
+          <button
+            class="copy-output-btn"
+            onclick="copyTextValue('textOutput')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
           <button
             class="download-btn"
             onclick="downloadTextAudio()"
@@ -939,13 +946,6 @@
             title="朗讀翻譯結果"
           >
             <i class="fas fa-volume-up"></i>
-          </button>
-          <button
-            class="copy-output-btn"
-            onclick="copyTextValue('textOutput')"
-            title="複製文字"
-          >
-            <i class="far fa-copy"></i>
           </button>
         </div>
         <button
