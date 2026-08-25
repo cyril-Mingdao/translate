@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>AI 智能翻譯機 (V57.0)</title>
+    <title>AI 智能翻譯機 (V59.0)</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
@@ -16,6 +16,8 @@
       rel="stylesheet"
     />
     <script src="https://cyril-mingdao.github.io/taigi-tts/snd-gapless.js"></script>
+    <!-- 華台翻譯詞庫（烏衣行 oikasu.com，12.7 萬筆，限個人非營利教育用途） -->
+    <script src="g2m2.js"></script>
     <style>
       /* ================= 全域設定 ================= */
       :root {
@@ -860,6 +862,19 @@
             </button>
           </a>
         </div>
+        <div
+          style="
+            margin-top: 12px;
+            font-size: 11px;
+            color: #888;
+            line-height: 1.5;
+            text-align: left;
+          "
+        >
+          台語翻譯詞庫：烏衣行「閩南語翻譯系統」(oikasu.com)，限個人非營利教育用途。<br />
+          台語語音：意傳科技「媠聲」(ithuan.tw)，免費展示服務、限流 3
+          句/分鐘；備援為教育部《臺灣台語常用詞辭典》音檔接音。
+        </div>
       </div>
     </div>
     <div id="toast-container"></div>
@@ -867,7 +882,7 @@
     <div id="textModeContainer">
       <div class="text-card">
         <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (V57.0)
+          <i class="fas fa-robot"></i> AI 智能翻譯機 (V59.0)
         </h2>
         <div class="app-subtitle">詹宗龍 製作</div>
         <div id="model-selector-container">
@@ -1053,30 +1068,209 @@
       let userBaseUrl = "https://generativelanguage.googleapis.com";
       let selectedModel = "";
 
-      // ================= 陽明交大 SARC 台語語音合成 =================
-      // 來源：陽明交大 Speech AI Research Center「Taiwanese Speech Synthesis」展示網站
-      // (https://sites.google.com/nycu.edu.tw/sarc/tw-nlai/demonstrations)。
-      // 免費雛形展示系統，以「現況」提供、不附保證亦無正式支援，教材/公開使用請標示語音來源。
-      // 輸入格式為台羅拼音數字調(TLPA，非調符式)，例：sin1-ni5 beh4 kau3--ah4。
-      const NYCU_TTS_URL = "http://tts001.ivoice.tw:8804/synthesize_TLPA";
-      const NYCU_TTS_GENDER = "女聲";
-      const NYCU_TTS_ACCENT = "強勢腔（高雄腔）";
-      const NYCU_TTS_MIN_INTERVAL_MS = 5000;
-      let lastNycuTtsRequestTime = 0;
+      // ================= g2m2 華台辭典翻譯引擎 =================
+      // 詞庫與演算法來源：烏衣行「閩南語翻譯系統」(oikasu.com / gnisew tools)。
+      // g2m2.js 為壓縮詞庫（127,058 筆，格式「次數=台語詞=華語詞」，單字母為高頻漢字縮寫）。
+      // 本檔移植其核心演算法：異體字正規化 → 最長詞優先排序 → 佔位符兩階段替換 → 去分詞空格。
+      // ⚠️ 授權：本詞庫限用於個人非營利之教育用途；規則式替換不改語序，長句仍需人工校正。
+      const G2M2 = (function () {
+        // 異體字正規化對照表（VM → VN）
+        const VM = ["－－", "－－", "﹗", "﹙", "﹚", "﹐", "﹑", "﹒", "﹕", "﹔", "﹖", "︰", "了", "力", "女", "不", "丹", "什", "六", "令", "北", "句", "立", "列", "劣", "吏", "年", "老", "肋", "串", "冷", "利", "卵", "吝", "呂", "尿", "弄", "更", "李", "沈", "牢", "良", "車", "辰", "里", "阮", "來", "例", "兩", "刺", "囹", "奈", "念", "怜", "拉", "易", "杻", "林", "泌", "泥", "炙", "狀", "秊", "金", "亮", "便", "咽", "契", "律", "怒", "拏", "拾", "柳", "洛", "流", "玲", "省", "胐", "若", "郎", "陋", "倫", "凉", "料", "旅", "朗", "栗", "浪", "烈", "烙", "狼", "珞", "琉", "留", "紐", "索", "茶", "豈", "郞", "勒", "匿", "參", "崙", "捻", "掠", "敎", "梁", "梨", "殺", "淋", "淚", "淪", "率", "理", "略", "異", "硫", "笠", "粒", "累", "羚", "聆", "脚", "連", "陵", "陸", "鹿", "勞", "喇", "喞", "嵐", "廊", "復", "惡", "温", "痢", "菉", "菱", "裂", "量", "隆", "靓", "亂", "塞", "廉", "慄", "暈", "溜", "溺", "滑", "煉", "碌", "祿", "稜", "落", "葉", "虜", "裏", "裡", "賂", "賈", "路", "酪", "鈴", "随", "零", "雷", "僚", "寧", "屢", "漏", "漣", "綠", "綾", "裸", "說", "領", "凜", "劉", "寮", "履", "憐", "戮", "撚", "數", "樂", "樓", "瑩", "璉", "磊", "練", "蓮", "蓼", "諒", "論", "輦", "輪", "閭", "隣", "魯", "黎", "擄", "曆", "歷", "燎", "燐", "璘", "盧", "罹", "諾", "遼", "錄", "駱", "龍", "龜", "勵", "嶺", "殮", "濕", "濫", "療", "磻", "縷", "聯", "臨", "螺", "鍊", "隸", "壘", "濾", "獵", "禮", "糧", "藍", "離", "壟", "廬", "懶", "櫓", "簾", "羅", "臘", "識", "類", "麗", "爐", "礪", "藺", "蘆", "襤", "醴", "欄", "爛", "癩", "蘭", "蠟", "露", "籠", "聾", "讀", "轢", "戀", "蘿", "邏", "鱗", "麟", "靈", "鷺", "戆", "驪", "鸞", "兀", "凞", "切", "嗀", "塚", "宅", "度", "﨨", "廓", "拓", "晴", "暴", "洞", "猪", "益", "礼", "神", "祥", "福", "精", "糖", "羽", "﨑", "行", "見", "諸", "輻", "逸", "都", "降", "靖", "飯", "飼", "館", "鶴", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "󿗧", "󿕅", "󸾯", "", "岀", "没", "秃", "劵", "刴", "抝", "殁", "畁", "爲", "娱", "挟", "眞", "欵", "浄", "衆", "歳", "輰", "𧗊", "麽", "奬", "縆", "駡", "腟", "𤖠", "𦉛", "隷", "鲫", "櫉", "赢", "讉", "鼹", "𤒿", "廰", "鑚", "戅", "朏"];
+        const VN = ["──", "──", "！", "（", "）", "，", "、", "。", "：", "；", "？", "：", "了", "力", "女", "不", "丹", "什", "六", "令", "北", "句", "立", "列", "劣", "吏", "年", "老", "肋", "串", "冷", "利", "卵", "吝", "呂", "尿", "弄", "更", "李", "沈", "牢", "良", "車", "辰", "里", "阮", "來", "例", "兩", "刺", "囹", "奈", "念", "怜", "拉", "易", "杻", "林", "泌", "泥", "炙", "狀", "秊", "金", "亮", "便", "咽", "契", "律", "怒", "孥", "拾", "柳", "洛", "流", "玲", "省", "朏", "若", "郎", "陋", "倫", "涼", "料", "旅", "朗", "栗", "浪", "烈", "烙", "狼", "珞", "琉", "留", "紐", "索", "茶", "豈", "郎", "勒", "匿", "參", "崙", "捻", "掠", "教", "梁", "梨", "殺", "淋", "淚", "淪", "率", "理", "略", "異", "硫", "笠", "粒", "累", "羚", "聆", "腳", "連", "陵", "陸", "鹿", "勞", "喇", "唧", "嵐", "廊", "復", "惡", "溫", "痢", "菉", "菱", "裂", "量", "隆", "靚", "亂", "塞", "廉", "慄", "暈", "溜", "溺", "滑", "煉", "碌", "祿", "稜", "落", "葉", "虜", "裏", "裡", "賂", "賈", "路", "酪", "鈴", "隨", "零", "雷", "僚", "寧", "屢", "漏", "漣", "綠", "綾", "裸", "說", "領", "凜", "劉", "寮", "履", "憐", "戮", "撚", "數", "樂", "樓", "瑩", "璉", "磊", "練", "蓮", "蓼", "諒", "論", "輦", "輪", "閭", "隣", "魯", "黎", "擄", "曆", "歷", "燎", "燐", "璘", "盧", "罹", "諾", "遼", "錄", "駱", "龍", "龜", "勵", "嶺", "殮", "溼", "濫", "療", "磻", "縷", "聯", "臨", "螺", "鍊", "隸", "壘", "濾", "獵", "禮", "糧", "藍", "離", "壟", "廬", "懶", "櫓", "簾", "羅", "臘", "識", "類", "麗", "爐", "礪", "藺", "蘆", "襤", "醴", "欄", "爛", "賴", "蘭", "蠟", "露", "籠", "聾", "讀", "轢", "戀", "蘿", "邏", "鱗", "麟", "靈", "鷺", "戇", "驪", "鸞", "兀", "凞", "切", "嗀", "塚", "宅", "度", "鋅", "廓", "拓", "晴", "暴", "洞", "猪", "益", "礼", "神", "祥", "福", "精", "糖", "羽", "崎", "行", "見", "諸", "輻", "逸", "都", "降", "靖", "飯", "飼", "館", "鶴", "𫝞", "𫝛", "𫝏", "𫝺", "𫝻", "𫟂", "𫝙", "𫟊", "𪜶", "𬦰", "𪹚", "𫝘", "𫝾", "𫞭", "𫞻", "𫞼", "𫟧", "𫠛", "𫣆", "𬑎", "𬖐", "𰹬", "𬠖", "𫝞", "𫝛", "𫝏", "𫝺", "𫝻", "𰣻", "𫟂", "𫝙", "𫟊", "𱱿", "𰣻", "𱱿", "𰹬", "", "出", "沒", "禿", "券", "剁", "拗", "歿", "畀", "為", "娛", "挾", "真", "欸", "淨", "眾", "歲", "暢", "盡", "麼", "獎", "緪", "罵", "膣", "牆", "罅", "隸", "鯽", "櫥", "贏", "譴", "鼴", "㸐", "廳", "鑽", "戇", "胐"];
+        // 詞庫解壓對照：單字母 → 高頻漢字；圈圈字母 → 原始字母
+        const TXT_AA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const TXT_KK = "一人大不無好來會子有頭个的到下著得毋去了這真水心家過做出事上生在天很多個小時要講麼你起地食用面開三沒手打愛日較氣行年學公想啊";
+        const TXT_EE = "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ⓪①②③④⑤⑥⑦⑧⑨";
+        const mapKK = {},
+          mapEE = {};
+        for (let i = 0; i < TXT_AA.length; i++) {
+          mapKK[TXT_AA[i]] = TXT_KK[i];
+          mapEE[TXT_EE[i]] = TXT_AA[i];
+        }
 
-      function buildNycuTtsUrl(tlpa) {
-        return (
-          `${NYCU_TTS_URL}?text1=${encodeURIComponent(tlpa)}` +
-          `&gender=${encodeURIComponent(NYCU_TTS_GENDER)}` +
-          `&accent=${encodeURIComponent(NYCU_TTS_ACCENT)}`
-        );
+        // 詞庫解壓：單字母 → 高頻漢字；圈圈字母 → 原始字母
+        function decode(s) {
+          let a = "";
+          for (const ch of s) a += mapKK[ch] || ch;
+          let b = "";
+          for (const ch of a) b += mapEE[ch] || ch;
+          return b;
+        }
+
+        // 異體字正規化（例：﹒→。、凉→涼），讓輸入能對上詞庫用字
+        function normVariant(t) {
+          for (let i = 0; i < VM.length; i++) {
+            if (!VM[i] || VM[i] === VN[i]) continue;
+            if (t.indexOf(VM[i]) !== -1) t = t.split(VM[i]).join(VN[i]);
+          }
+          return t;
+        }
+
+        let ready = false;
+        let C, D, E, F; // C:華(依華語字數排) D:台 ／ E:台(依台語字數排) F:華
+
+        function build() {
+          if (ready) return;
+          const items = [];
+          for (const it of ww.split("\t")) {
+            const p = it.split("=");
+            if (p.length < 2) continue;
+            const cnt = parseInt(p[0], 10) || 0;
+            const tai = decode(p[1]);
+            const hua = p[2] ? decode(p[2]) : tai;
+            if (!tai || !hua) continue;
+            items.push([cnt, tai, hua]);
+          }
+          const len = (t) => Array.from(t).length; // 用 Array.from 才數得對 CJK 擴充區
+          const byHua = items
+            .slice()
+            .sort(
+              (x, y) =>
+                len(y[2]) - len(x[2]) || y[0] - x[0] || x[1].localeCompare(y[1]),
+            );
+          C = byHua.map((i) => i[2]);
+          D = byHua.map((i) => i[1]);
+          const byTai = items
+            .slice()
+            .sort(
+              (x, y) =>
+                len(y[1]) - len(x[1]) || y[0] - x[0] || x[2].localeCompare(y[2]),
+            );
+          E = byTai.map((i) => i[1]);
+          F = byTai.map((i) => i[2]);
+          ready = true;
+        }
+
+        // 兩階段替換：命中先換唯一佔位符，全部掃完再換回譯文。
+        // 目的是避免短詞吃掉長詞的機會，也避免譯文被後面的規則二次翻譯。
+        function convert(text, from, to) {
+          let v = normVariant(text);
+          const hit = [];
+          for (let i = 0; i < from.length; i++) {
+            const s = from[i];
+            if (s && v.indexOf(s) !== -1) {
+              v = v.split(s).join("㈰" + i + "㈱");
+              hit.push(i);
+            }
+          }
+          for (const i of hit) {
+            v = v.split("㈰" + i + "㈱").join(to[i] + " ");
+          }
+          return v;
+        }
+
+        // 移除替換時補上的分詞空格（保留英數字之間的空格）
+        function tidy(t) {
+          for (let k = 0; k < 3; k++)
+            t = t.replace(/([^!-㏕,^︰-￥])( +)([^!-㏕,^︰-￥])/g, "$1$3");
+          for (let k = 0; k < 3; k++) t = t.replace(/( +)([^!-㏕,^︰-￥])/g, "$2");
+          for (let k = 0; k < 3; k++) t = t.replace(/([^!-㏕,^︰-￥])( +)/g, "$1");
+          return t.trim();
+        }
+
+        // 台→華 的語法修補（原系統 Xiubu / g2m 的 k2g 規則）
+        function fixK2G(t) {
+          t = t.replace(/(從)([^!?︰-￥]{0,14})([說笑哭打])/g, "對$2$3");
+          t = t.replace(/(和)([^!?︰-￥]{0,14})([說走跑笑哭打])/g, "跟$2$3");
+          t = t.replace(
+            /(個)([^!?︰-￥]{0,14})([鴨鵝雞牛豬狗貓鼠虎兔])/g,
+            "隻$2$3",
+          );
+          for (let k = 0; k < 3; k++)
+            t = t.replace(
+              /([一二三四五六七八九十百千萬億兆零])( )([一二三四五六七八九十百千萬億兆零])/g,
+              "$1$3",
+            );
+          return t;
+        }
+
+        return {
+          get ready() {
+            return ready;
+          },
+          build,
+          hua2tai(t) {
+            build();
+            return tidy(convert(t, C, D));
+          },
+          tai2hua(t) {
+            build();
+            return tidy(fixK2G(convert(t, E, F)));
+          },
+        };
+      })();
+
+      // 詞庫解壓＋排序約需 1～3 秒，先讓 toast 畫出來再做，避免畫面像當掉
+      async function ensureG2M2() {
+        if (G2M2.ready) return;
+        showToast("正在載入台語詞庫（約 12 萬筆），首次需要幾秒…");
+        await new Promise((r) => setTimeout(r, 60));
+        G2M2.build();
       }
 
-      async function textToTaiiloTlpa(text) {
-        // 翻譯結果可能已含「漢字(台羅)」括號標註，轉換發音前先去除括號註記，
-        // 避免括號內容干擾 Gemini 的臺羅轉換。
+      // ================= 意傳「媠聲」台語語音合成 =================
+      // 來源：意傳科技 ithuan.tw「媠聲／鬥拍字」（前端 i3thuan5/TauPhahJi-BangTsam，MIT / g0v）。
+      // GET https://hapsing.ithuan.tw/bangtsam?taibun=<臺羅KIP> → 回傳 mp3（整句自然發音、免金鑰）。
+      // ⚠️ 免費展示服務、資源有限：官方限流「1 IP 1 分鐘最多 3 句」，本檔已內建節流；
+      //    教材或公開場合使用請標示語音來源，正式量產前請洽意傳科技談授權。
+      //    被限流、逾時或失敗時，自動退回教育部辭典逐字接音 holo()。
+      // 註：媠聲必須餵臺羅（餵漢字只會得到不完整的音檔）；漢字→臺羅的官方 API
+      //     (hokbu.ithuan.tw/tau) 沒有 CORS 標頭，瀏覽器不能直接呼叫，
+      //     因此臺羅優先取自翻譯結果括號內的標音，取不到才請 Gemini 轉。
+      const ITHUAN_TTS_URL = "https://hapsing.ithuan.tw/bangtsam";
+      const ITHUAN_MIN_INTERVAL_MS = 21000;
+      let lastIthuanRequestTime = 0;
+      let ithuanAudio = null;
+
+      // 漢字範圍（含中日韓擴充 A／B 與相容區；擴充 B 以高代理範圍判斷）。
+      // 測試用不加 g，計數用才加 g —— 帶 g 的 regex 呼叫 test() 會記住 lastIndex 而誤判。
+      const HAN_TEST = /[\u3400-\u9fff\uf900-\ufaff\ud840-\ud87f]/;
+      const HAN_ALL = /[\u3400-\u9fff\uf900-\ufaff\ud840-\ud87f]/g;
+
+      // 括號內是不是羅馬字標音：要有拉丁字母，且不能夾漢字
+      function isTailoChunk(s) {
+        return /[A-Za-z]/.test(s) && !HAN_TEST.test(s);
+      }
+
+      // 取出翻譯結果裡「所有」括號標音，依序接起來。
+      // ⚠️ 只取最後一組會漏字：Gemini 遇到多句時常一句一組括號，
+      //    逐詞標註時更慘（整句只剩最後一個詞的音）。
+      function extractTailo(text) {
+        const chunks = [];
+        const re = /[（(]([^（）()]+)[）)]/g;
+        let mt;
+        while ((mt = re.exec(String(text))) !== null) {
+          const s = mt[1].trim();
+          if (isTailoChunk(s)) chunks.push(s);
+        }
+        return chunks.join(" ");
+      }
+
+      // 去掉所有羅馬字括號，只留漢字（拿去朗讀或再翻譯時用）
+      function stripTailoParen(text) {
+        return String(text)
+          .replace(/[（(]([^（）()]+)[）)]/g, (all, inner) =>
+            isTailoChunk(inner) ? "" : all,
+          )
+          .replace(/\s{2,}/g, " ")
+          .trim();
+      }
+
+      // 標音是否涵蓋整段漢字：音節數明顯少於漢字數，代表 Gemini 只標了一部分，
+      // 直接拿去合成就會漏字，要重新整段標音。
+      function tailoCoversText(tailo, hanji) {
+        const hanCount = (String(hanji).match(HAN_ALL) || []).length;
+        if (!hanCount) return true;
+        const syllables = String(tailo)
+          .split(/[\s\u3000]+/)
+          .filter(Boolean)
+          .reduce((n, w) => n + w.split(/-+/).filter(Boolean).length, 0);
+        return syllables >= hanCount * 0.7;
+      }
+
+      async function textToTailoKip(text) {
         const cleanText = text.replace(/[（(][^）)]*[）)]/g, "");
-        const prompt = `Convert the following Taiwanese Hokkien (Tai-gi) text into Tai-uan Lo-ma-ji Phing-im (TLPA) romanization using NUMBERED tones (1-8), NOT tone diacritics. Rules: syllables within the same word are joined by a single hyphen (e.g. sin1-ni5); a following neutral/reduced-tone syllable is joined with a DOUBLE hyphen (e.g. kau3--ah4); separate words with spaces; keep original punctuation (，。？！) at clause/sentence end. Output ONLY the romanized text, no Chinese characters, no explanation. Example: 新年欲到矣，咱來去買年菜好無？ -> sin1-ni5 beh4 kau3--ah4, lan2 lai5-khi3 be2 ni5-tshai3 ho2--bo5? Text: "${cleanText}"`;
+        const prompt = `Convert the following Taiwanese Hokkien (Tâi-gí) text into Taiwan's Ministry of Education official Tâi-uân Tâi-gí Lô-má-jī Phing-im Hong-àn (臺羅, Tâi-lô) with TONE DIACRITICS (never digits), NOT Pe̍h-ōe-jī. Use Tâi-lô conventions: 'ts/tsh' (never 'ch/chh'), 'oo' (never 'o͘'), 'ing/ik' (never 'eng/ek'), 'nn' for nasalization (never superscript ⁿ), 'ua/ue' (never 'oa/oe'). Join syllables inside a word with a single hyphen; separate words with spaces; keep sentence-final punctuation. Output ONLY the romanized text, no Chinese characters, no explanation. Example: 咱來去買物件。 -> Lán lâi-khì bé mi̍h-kiānn. Text: "${cleanText}"`;
         const res = await fetch(
           `${userBaseUrl}/v1beta/models/${selectedModel || "gemini-1.5-flash"}:generateContent?key=${userApiKey}`,
           {
@@ -1093,33 +1287,175 @@
         return data.candidates[0].content.parts[0].text.trim();
       }
 
-      // 台語音檔播放：改用 snd.js 的 holo(el, url) 播放教育部辭典音檔，
-      // url 為臺羅拼音（數字調或調符式皆可），el 為觸發按鈕(供圖示切換用，可傳 null)。
-      async function speakHolo(text, el) {
+      async function getTaigiKip(text) {
+        const hanji = stripTailoParen(text);
+        const inline = extractTailo(text);
+        if (inline && tailoCoversText(inline, hanji)) return inline;
+
         if (!userApiKey) {
-          showToast("請先設定 API Key 才能使用台語語音", "error");
-          return false;
+          if (inline) showToast("標音不完整，發音可能漏字（設定 API Key 可自動補全）");
+          return inline;
         }
         try {
-          showToast("正在合成台語語音…");
-          const tailo = await textToTaiiloTlpa(text);
-          // skipStart/skipEnd 修剪每個字音檔前後的靜音，讓字與字之間盡量無縫接軌。
-          holo(el || null, tailo, { skipStart: 0.08, skipEnd: 0.3 });
-          return true;
+          const full = await textToTailoKip(hanji || text);
+          if (full && tailoCoversText(full, hanji)) return full;
+          return full || inline;
         } catch (e) {
-          showToast("台語語音合成失敗: " + e.message, "error");
-          return false;
+          return inline;
         }
       }
 
-      // 依語言代碼分派：臺灣台語走 holo (snd.js)，其餘語言走瀏覽器內建語音
+      // 備援：教育部《臺灣台語常用詞辭典》單字音檔接音（snd-gapless.js 的 holo）
+      function playTailoConcat(tailo, el) {
+        holo(el || null, tailo, { skipStart: 0.08, skipEnd: 0.3 });
+      }
+
+      async function speakTaigi(text, el) {
+        const kip = await getTaigiKip(text);
+        if (!kip) {
+          showToast(
+            userApiKey
+              ? "台語標音失敗，無法發音"
+              : "請先設定 API Key 才能取得臺羅標音",
+            "error",
+          );
+          return false;
+        }
+
+        const wait =
+          ITHUAN_MIN_INTERVAL_MS - (Date.now() - lastIthuanRequestTime);
+        if (wait > 0) {
+          showToast(
+            `媠聲冷卻中（還要 ${Math.ceil(wait / 1000)} 秒），改用辭典接音`,
+          );
+          playTailoConcat(kip, el);
+          return true;
+        }
+
+        if (synth) synth.cancel();
+        try {
+          if (ithuanAudio) ithuanAudio.pause();
+        } catch (e) {}
+
+        lastIthuanRequestTime = Date.now();
+        showToast("正在用意傳媠聲合成台語語音…");
+
+        const audio = new Audio(
+          ITHUAN_TTS_URL + "?taibun=" + encodeURIComponent(kip),
+        );
+        ithuanAudio = audio;
+        let fellBack = false;
+        const fallback = (why) => {
+          if (fellBack) return;
+          fellBack = true;
+          clearTimeout(timer);
+          showToast("媠聲" + why + "，改用教育部辭典接音");
+          playTailoConcat(kip, el);
+        };
+        const timer = setTimeout(() => fallback("逾時"), 15000);
+        audio.oncanplay = () => clearTimeout(timer);
+        audio.onplaying = () => clearTimeout(timer);
+        audio.onerror = () => fallback("連線失敗");
+        try {
+          await audio.play();
+        } catch (e) {
+          fallback("無法播放");
+        }
+        return true;
+      }
+
+      // 依語言代碼分派：臺灣台語走媠聲／接音，其餘語言走瀏覽器內建語音
       async function smartSpeak(text, langCode, el) {
         if (langCode === "nan-TW") {
-          await speakHolo(text, el);
+          await speakTaigi(text, el);
         } else {
           speakText(text, langCode);
         }
       }
+
+      // ================= 翻譯路由 =================
+      const IDX_ZH = 0; // 繁體中文
+      const IDX_TAI = 1; // 臺灣台語
+
+      // 用 Gemini 潤飾 g2m2 底稿：只准調語序、不准改用字，最後補臺羅
+      async function polishTaigi(sourceZh, draft) {
+        const prompt = `You are a Taiwanese Hokkien (Tâi-gí) editor. Below is a Mandarin sentence and a DRAFT Taiwanese translation produced by a dictionary that replaces words one by one without fixing word order.
+
+Mandarin: "${sourceZh}"
+Draft Taiwanese: "${draft}"
+
+Your job:
+1. Keep EVERY Chinese character choice from the draft. The draft uses Taiwan Ministry of Education recommended characters (教育部推薦用字) and is authoritative on wording. Do NOT swap them back to Mandarin words or to other variants.
+2. Only fix word order, add missing function words/particles, and repair fragments so the sentence reads as natural spoken Tâi-gí. Add a character only when the draft is clearly missing one.
+3. Then append the romanization of the WHOLE text in ONE single pair of parentheses at the VERY END of your output. Even if the text has several sentences, use exactly ONE pair of parentheses covering all of them. Do NOT annotate word by word, do NOT put one pair per sentence, do NOT put parentheses anywhere else, and do NOT write anything after the closing parenthesis. It MUST follow Taiwan's Ministry of Education official Tâi-uân Tâi-gí Lô-má-jī Phing-im Hong-àn (臺羅, Tâi-lô), NOT Pe̍h-ōe-jī: write 'ts/tsh' (never 'ch/chh'), 'oo' (never 'o͘'), 'ing/ik' (never 'eng/ek'), 'nn' for nasalization (never superscript ⁿ), 'ua/ue' (never 'oa/oe'), and use tone diacritics (never digits).
+
+Output ONLY this format, nothing else: 漢字整句。(Tâi-lô tsn̂g-kù.)
+Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
+        try {
+          const res = await fetch(
+            `${userBaseUrl}/v1beta/models/${selectedModel || "gemini-1.5-flash"}:generateContent?key=${userApiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+              }),
+            },
+          );
+          if (!res.ok) return draft;
+          const data = await res.json();
+          if (!data.candidates) return draft;
+          const out = data.candidates[0].content.parts[0].text
+            .replace(/<think>[\s\S]*?<\/think>/gi, "")
+            .trim();
+          return out || draft;
+        } catch (e) {
+          return draft;
+        }
+      }
+
+      // 台語一律走 g2m2 詞庫；其他語言維持原本的 Gemini 直譯
+      async function translateSmart(text, sIdx, tIdx) {
+        const s = Number(sIdx),
+          t = Number(tIdx);
+
+        if (t === IDX_TAI) {
+          let zh = text;
+          if (s !== IDX_ZH) {
+            zh = await callGeminiAPI(
+              text,
+              languages[s].prompt,
+              languages[IDX_ZH].prompt,
+            );
+            if (typeof zh === "string" && zh.startsWith("[系統訊息]")) return zh;
+          }
+          await ensureG2M2();
+          const draft = G2M2.hua2tai(zh);
+          if (!userApiKey) {
+            showToast("未設定 API Key，使用離線詞庫翻譯（無臺羅標音）");
+            return draft;
+          }
+          return await polishTaigi(zh, draft);
+        }
+
+        if (s === IDX_TAI) {
+          await ensureG2M2();
+          const zh = G2M2.tai2hua(stripTailoParen(text) || text);
+          if (t === IDX_ZH) return zh;
+          return await callGeminiAPI(
+            zh,
+            languages[IDX_ZH].prompt,
+            languages[t].prompt,
+          );
+        }
+
+        return await callGeminiAPI(
+          text,
+          languages[s].prompt,
+          languages[t].prompt,
+        );
+      }
+
       const languages = [
         {
           name: "繁體中文",
@@ -1128,8 +1464,8 @@
         },
         {
           name: "臺灣台語 (Tâi-gí)",
-          prompt:
-            "Taiwanese Hokkien (Tâi-gí). First write the ENTIRE sentence in Traditional Chinese characters (Ministry of Education standard usage). Then, immediately after the whole Chinese-character sentence, add its full romanization for the WHOLE sentence in a single parentheses — do NOT annotate word by word. The romanization MUST strictly follow Taiwan's Ministry of Education official Tâi-uân Tâi-gí Lô-má-jī Phing-im Hong-àn (臺灣台語羅馬字拼音方案, Tâi-lô), NOT Pe̍h-ōe-jī (POJ). Use Tâi-lô spelling conventions, not POJ ones: write 'ts/tsh' (never 'ch/chh'), 'oo' (never 'o͘'), 'ee' (never 'e͘'), 'ing/ik' (never 'eng/ek'), 'uinn' etc. with 'nn' for nasalization (never the ⁿ superscript letter), and 'ua/ue' (never 'oa/oe'). Use proper tone-diacritic marks (never digits). Format: 漢字整句。(Tâi-lô tsn̂g-kù.) Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)",
+          // 翻譯已改由 g2m2 詞庫負責，這段 prompt 只剩 detectLanguage 用來辨識語言
+          prompt: "Taiwanese Hokkien (Tâi-gí)",
           speechCode: "nan-TW",
         },
         { name: "English (英語)", prompt: "English", speechCode: "en-US" },
@@ -1295,6 +1631,12 @@
         initDraggableMic("bottomMicBtn", "bottom");
         initSplitter();
         setupTextPlayback();
+        // 背景暖機：先把 12.7 萬筆詞庫解壓排序好，第一次翻譯就不用等
+        setTimeout(() => {
+          try {
+            G2M2.build();
+          } catch (e) {}
+        }, 1200);
 
         document
           .getElementById("textInput")
@@ -1862,11 +2204,7 @@
 
           const s = sourceSelect.value,
             t = targetSelect.value;
-          o.value = await callGeminiAPI(
-            i.value,
-            languages[s].prompt,
-            languages[t].prompt,
-          );
+          o.value = await translateSmart(i.value, s, t);
         } catch (e) {
           o.value = "Error";
         } finally {
@@ -1906,35 +2244,35 @@
           return;
         }
         if (langCode === "nan-TW") {
-          if (!userApiKey) {
-            showToast("請先設定 API Key 才能下載台語語音", "error");
-            return;
-          }
-          const waitMs =
-            NYCU_TTS_MIN_INTERVAL_MS - (Date.now() - lastNycuTtsRequestTime);
-          if (waitMs > 0) {
+          const kip = await getTaigiKip(text);
+          if (!kip) {
             showToast(
-              `台語語音服務冷卻中，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
+              userApiKey
+                ? "台語標音失敗，無法下載"
+                : "請先設定 API Key 才能取得臺羅標音",
               "error",
             );
             return;
           }
-          try {
-            showToast("正在合成台語語音…");
-            const tlpa = await textToTaiiloTlpa(text);
-            lastNycuTtsRequestTime = Date.now();
-            const url = buildNycuTtsUrl(tlpa);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "translation_taigi.wav";
-            a.target = "_blank";
-            a.rel = "noreferrer";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          } catch (e) {
-            showToast("台語語音合成失敗: " + e.message, "error");
+          const waitMs =
+            ITHUAN_MIN_INTERVAL_MS - (Date.now() - lastIthuanRequestTime);
+          if (waitMs > 0) {
+            showToast(
+              `媠聲冷卻中，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
+              "error",
+            );
+            return;
           }
+          lastIthuanRequestTime = Date.now();
+          showToast("正在合成台語語音…");
+          const a = document.createElement("a");
+          a.href = ITHUAN_TTS_URL + "?taibun=" + encodeURIComponent(kip);
+          a.download = "translation_taigi.mp3";
+          a.target = "_blank";
+          a.rel = "noreferrer";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
           return;
         }
         if (langCode !== "zh-TW") langCode = langCode.split("-")[0];
@@ -1995,19 +2333,19 @@
       async function doVoiceTranslation(text, side) {
         const topIdx = document.getElementById("voiceTopLang").value;
         const bottomIdx = document.getElementById("voiceBottomLang").value;
-        let sP, tP, out, speechLang;
+        let sIdx, tIdx, out, speechLang;
         if (side === "top") {
-          sP = languages[topIdx].prompt;
-          tP = languages[bottomIdx].prompt;
+          sIdx = topIdx;
+          tIdx = bottomIdx;
           out = "bottomTranslatedText";
           speechLang = languages[bottomIdx].speechCode;
         } else {
-          sP = languages[bottomIdx].prompt;
-          tP = languages[topIdx].prompt;
+          sIdx = bottomIdx;
+          tIdx = topIdx;
           out = "topTranslatedText";
           speechLang = languages[topIdx].speechCode;
         }
-        const r = await callGeminiAPI(text, sP, tP);
+        const r = await translateSmart(text, sIdx, tIdx);
         document.getElementById(out).innerText = r;
         if (!r.startsWith("[")) smartSpeak(r, speechLang, document.getElementById(out));
       }
