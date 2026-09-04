@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>AI 智能翻譯機 (V64.0)</title>
+    <title>AI 智能翻譯機 (V65.0)</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
@@ -184,7 +184,8 @@
         position: relative;
         margin: 20px 0;
       }
-      .custom-window input {
+      /* :not(checkbox)：不然「不再顯示」的勾選框會被撐成整列寬，版面歪掉 */
+      .custom-window input:not([type="checkbox"]) {
         width: 100%;
         max-width: 100%;
         padding: 12px 15px;
@@ -196,6 +197,12 @@
         background: #fafafa;
         -webkit-user-select: auto;
         user-select: auto;
+      }
+      .custom-window input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        margin: 0;
       }
       .btn-group {
         display: flex;
@@ -1014,7 +1021,7 @@
     <div id="textModeContainer">
       <div class="text-card">
         <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (V64.0)
+          <i class="fas fa-robot"></i> AI 智能翻譯機 (V65.0)
         </h2>
         <div class="app-subtitle">詹宗龍 製作</div>
         <div id="model-selector-container">
@@ -1533,7 +1540,7 @@
       // force：從「怎麼設定？」點進來時，即使勾過「不再顯示」也要開
       function showTaigiImeHint(targetEl, force) {
         if (targetEl) targetEl.focus(); // 先把鍵盤叫出來
-        if (!force && localStorage.getItem(TAIGI_IME_HINT_KEY) === "1") {
+        if (!force && storageGet(TAIGI_IME_HINT_KEY) === "1") {
           showToast("請切換到教育部臺灣台語輸入法，按鍵盤上的語音鍵");
           return;
         }
@@ -1546,6 +1553,14 @@
           : "none";
         document.getElementById("taigiImeHintOff").checked = false;
         openModal("taigiImeModal");
+      }
+
+      function closeTaigiImeHint() {
+        // 先關視窗、再存設定：存不進去（無痕模式、file://）也不能讓視窗卡住
+        closeModal("taigiImeModal");
+        if (document.getElementById("taigiImeHintOff").checked) {
+          storageSet(TAIGI_IME_HINT_KEY, "1");
+        }
       }
 
       // ---- 語音鏡像模式的台語輸入 ----
@@ -1756,6 +1771,29 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
+      // localStorage 在 file://、無痕模式或配額滿時會丟例外。
+      // 一律包起來，免得存取失敗把後面的流程整個中斷。
+      function storageGet(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          return null;
+        }
+      }
+      function storageSet(key, val) {
+        try {
+          localStorage.setItem(key, val);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      function storageRemove(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      }
+
       function showToast(m, t = "normal") {
         const c = document.getElementById("toast-container"),
           d = document.createElement("div");
@@ -1780,9 +1818,9 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
       }
 
       function initApiKey() {
-        const k = localStorage.getItem("gemini_api_key");
+        const k = storageGet("gemini_api_key");
         const u =
-          localStorage.getItem("gemini_base_url") ||
+          storageGet("gemini_base_url") ||
           "https://generativelanguage.googleapis.com";
         if (k) {
           userApiKey = k;
@@ -1803,10 +1841,10 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         const k = document.getElementById("apiKeyInput").value.trim();
         const u = document.getElementById("baseurlInput").value.trim();
         if (k) {
-          localStorage.setItem("gemini_api_key", k);
+          storageSet("gemini_api_key", k);
           userApiKey = k;
           if (u) {
-            localStorage.setItem("gemini_base_url", u);
+            storageSet("gemini_base_url", u);
             userBaseUrl = u;
           }
           closeModal("settingsModal");
@@ -1817,8 +1855,8 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         }
       }
       function executeReset() {
-        localStorage.removeItem("gemini_api_key");
-        localStorage.removeItem("gemini_base_url");
+        storageRemove("gemini_api_key");
+        storageRemove("gemini_base_url");
         userApiKey = "";
         closeModal("settingsModal");
         showToast("Key 已清除");
