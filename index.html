@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>AI 智能翻譯機 (V65.0)</title>
+    <title>AI 智能翻譯機 (V66.0)</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
@@ -41,7 +41,7 @@
       body {
         /* 只加在 body，不要用 * 通配，否則會蓋掉 Font Awesome 圖示的 font-family */
         font-family:
-          "台灣楷體", "台灣黑體", tauhu-oo, "Roboto", Helvetica, Arial, sans-serif;
+          "台灣黑體", "台灣楷體", tauhu-oo, "Roboto", Helvetica, Arial, sans-serif;
         background-color: var(--bg-color);
         margin: 0;
         color: var(--text-color);
@@ -959,9 +959,21 @@
         <p style="text-align: left; line-height: 1.8; margin: 0">
           台語語音請用<b>教育部《臺灣台語輸入法》</b>：<br />
           1. 點一下輸入框，叫出鍵盤<br />
-          2. 切換到「教育部臺灣台語輸入法」<br />
+          2. <span id="taigiImeSwitchStep">切換到「教育部臺灣台語輸入法」</span><br />
           3. 按鍵盤上的<b>語音鍵</b>講話<br />
           辨識出的台語漢字會直接落進輸入框，本頁不經手你的錄音。
+        </p>
+        <p
+          style="
+            text-align: left;
+            margin: 12px 0 0;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+          "
+        >
+          網頁沒辦法幫你切換鍵盤（作業系統不開放），但<b>切換一次之後系統會記住</b>，
+          同一次使用不必每次都切。
         </p>
         <p
           id="taigiImeDesktopNote"
@@ -1021,7 +1033,7 @@
     <div id="textModeContainer">
       <div class="text-card">
         <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (V65.0)
+          <i class="fas fa-robot"></i> AI 智能翻譯機 (V66.0)
         </h2>
         <div class="app-subtitle">詹宗龍 製作</div>
         <div id="model-selector-container">
@@ -1916,6 +1928,8 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
       window.onload = () => {
         initApiKey();
         initLanguageSelects();
+        applyInputLangs();
+        applyImeSwitchHint();
         checkSpeechSupport();
         handleResize();
         window.addEventListener("resize", handleResize);
@@ -2201,12 +2215,64 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
             el.add(new Option(l.name, i));
           });
         });
+        document
+          .getElementById("textSourceLang")
+          .addEventListener("change", applyInputLangs);
         document.getElementById("textSourceLang").selectedIndex = 0;
         document.getElementById("textTargetLang").selectedIndex = 2;
         document.getElementById("voiceTopLang").selectedIndex = 2;
         document.getElementById("voiceBottomLang").selectedIndex = 0;
       }
-      function syncLanguages(source) {}
+      function syncLanguages(source) {
+        applyInputLangs();
+      }
+
+      // 把目前選的語言寫進輸入元素的 lang 屬性。
+      // ⚠️ 這只是「提示」：作業系統不允許網頁指定或切換輸入法，
+      //    部分鍵盤會參考它自動切到對應語言，但沒有保證。
+      function inputLangCode(idx) {
+        const n = Number(idx);
+        if (n === IDX_TAI) return "nan-Hant-TW"; // 臺灣台語的完整 BCP-47 標記
+        return (languages[n] && languages[n].speechCode) || "";
+      }
+
+      function setLangAttr(el, idx) {
+        if (!el) return;
+        const code = inputLangCode(idx);
+        if (code) el.setAttribute("lang", code);
+        else el.removeAttribute("lang");
+      }
+
+      function applyInputLangs() {
+        setLangAttr(
+          document.getElementById("textInput"),
+          document.getElementById("textSourceLang").value,
+        );
+        setLangAttr(
+          document.getElementById("topOriginalText"),
+          document.getElementById("voiceTopLang").value,
+        );
+        setLangAttr(
+          document.getElementById("bottomOriginalText"),
+          document.getElementById("voiceBottomLang").value,
+        );
+      }
+
+      // 依平台顯示實際的切換手勢——這是網頁唯一能幫上忙的地方
+      function applyImeSwitchHint() {
+        const ua = navigator.userAgent;
+        const el = document.getElementById("taigiImeSwitchStep");
+        if (!el) return;
+        if (isIOS) {
+          el.innerHTML =
+            "按鍵盤左下角的<b>🌐 地球鍵</b>切換到「臺灣台語輸入法」（長按可直接挑選）";
+        } else if (/Android/i.test(ua)) {
+          el.innerHTML =
+            "按導覽列右下角的<b>鍵盤圖示</b>切換，或<b>長按空白鍵</b>選「臺灣台語輸入法」";
+        } else {
+          el.innerHTML = "切換到「教育部臺灣台語輸入法」";
+        }
+      }
 
       function getSpeechRecognition() {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
