@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>AI 智能翻譯機 (V60.0)</title>
+    <title>AI 智能翻譯機 (V62.0)</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
@@ -15,6 +15,9 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
+    <!-- 台語擴充字字型：g2m2 詞庫會輸出「𠢕」這類 CJK 擴充 B 區漢字，
+         裝置沒字型會顯示成豆腐□。先用系統既有的台灣字型，再退回豆腐字型 tauhu-oo。 -->
+    <link href="https://tauhu.tw/tauhu-oo.css" rel="stylesheet" />
     <script src="https://cyril-mingdao.github.io/taigi-tts/snd-gapless.js"></script>
     <!-- 華台翻譯詞庫（烏衣行 oikasu.com，12.7 萬筆，限個人非營利教育用途） -->
     <script src="g2m2.js"></script>
@@ -36,7 +39,9 @@
       }
 
       body {
-        font-family: "Roboto", Helvetica, Arial, sans-serif;
+        /* 只加在 body，不要用 * 通配，否則會蓋掉 Font Awesome 圖示的 font-family */
+        font-family:
+          "台灣楷體", "台灣黑體", tauhu-oo, "Roboto", Helvetica, Arial, sans-serif;
         background-color: var(--bg-color);
         margin: 0;
         color: var(--text-color);
@@ -181,6 +186,7 @@
       }
       .custom-window input {
         width: 100%;
+        max-width: 100%;
         padding: 12px 15px;
         border: 2px solid #eee;
         border-radius: 10px;
@@ -503,6 +509,8 @@
         font-size: 14px;
       }
       #model-selector-container {
+        gap: 8px;
+        min-width: 0;
         margin-bottom: 10px;
         padding: 10px;
         background: #eef2f8;
@@ -519,7 +527,14 @@
         border-radius: 5px;
         border: 1px solid #ccc;
         font-size: 13px;
+        /* 模型名稱可能很長：允許縮到 0 再以 ellipsis 截斷，不要把卡片撐破 */
+        flex: 1 1 auto;
+        min-width: 0;
         max-width: 200px;
+        text-overflow: ellipsis;
+      }
+      #model-selector-container > span {
+        flex: 0 0 auto;
       }
       .output-wrapper {
         position: relative;
@@ -655,6 +670,7 @@
         margin-bottom: 10px;
       }
       .speech-bubble {
+        overflow-wrap: anywhere;
         background: white;
         padding: 15px;
         border-radius: 18px;
@@ -889,7 +905,85 @@
         >
           台語翻譯詞庫：烏衣行「閩南語翻譯系統」(oikasu.com)，限個人非營利教育用途。<br />
           台語語音：意傳科技「媠聲」(ithuan.tw)，免費展示服務、限流 3
-          句/分鐘；備援為教育部《臺灣台語常用詞辭典》音檔接音。
+          句/分鐘；備援為教育部《臺灣台語常用詞辭典》音檔接音。<br />
+          台語語音輸入：教育部《臺灣台語輸入法》App（iOS／Android
+          皆有），由該 App 的鍵盤語音鍵直接輸入，本頁不經手錄音。<br />
+          台語擴充字字型：豆腐工作室 tauhu-oo (tauhu.tw)。
+        </div>
+      </div>
+    </div>
+    <div id="taigiImeModal" class="modal-overlay">
+      <div class="custom-window">
+        <h3><i class="fas fa-keyboard"></i> 台語語音輸入</h3>
+        <p style="text-align: left; line-height: 1.8; margin: 0">
+          台語語音請用<b>教育部《臺灣台語輸入法》</b>：<br />
+          1. 點一下輸入框，叫出鍵盤<br />
+          2. 切換到「教育部臺灣台語輸入法」<br />
+          3. 按鍵盤上的<b>語音鍵</b>講話<br />
+          辨識出的台語漢字會直接落進輸入框，本頁不經手你的錄音。
+        </p>
+        <p
+          id="taigiImeMirrorNote"
+          style="
+            display: none;
+            text-align: left;
+            margin: 12px 0 0;
+            color: #d93025;
+            font-size: 14px;
+          "
+        >
+          語音鏡像模式沒有輸入框，叫不出輸入法。台語請改用上方的「文字」模式。
+        </p>
+        <p
+          id="taigiImeDesktopNote"
+          style="
+            display: none;
+            text-align: left;
+            margin: 12px 0 0;
+            color: #d93025;
+            font-size: 14px;
+          "
+        >
+          這個功能要在手機或平板上使用；桌機沒有系統輸入法可以切換。
+        </p>
+        <div style="display: flex; gap: 8px; margin-top: 16px">
+          <a
+            href="https://apps.apple.com/tw/app/id6743423554"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="flex: 1; text-decoration: none"
+          >
+            <button class="btn-secondary" style="width: 100%" type="button">
+              <i class="fab fa-apple"></i> App Store
+            </button>
+          </a>
+          <a
+            href="https://play.google.com/store/apps/details?id=tw.moe.taiwanese.taigi"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="flex: 1; text-decoration: none"
+          >
+            <button class="btn-secondary" style="width: 100%" type="button">
+              <i class="fab fa-google-play"></i> Google Play
+            </button>
+          </a>
+        </div>
+        <label
+          style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #555;
+          "
+        >
+          <input type="checkbox" id="taigiImeHintOff" /> 不再顯示
+        </label>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="closeTaigiImeHint()">
+            我知道了
+          </button>
         </div>
       </div>
     </div>
@@ -898,7 +992,7 @@
     <div id="textModeContainer">
       <div class="text-card">
         <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (V60.0)
+          <i class="fas fa-robot"></i> AI 智能翻譯機 (V62.0)
         </h2>
         <div class="app-subtitle">詹宗龍 製作</div>
         <div id="model-selector-container">
@@ -1389,6 +1483,46 @@
         }
       }
 
+      // ================= 臺灣台語語音輸入：教育部輸入法 =================
+      // 教育部《臺灣台語輸入法》(tw.moe.taiwanese.taigi) 是系統級 IME，iOS 與
+      // Android 都有，鍵盤上就有語音鍵；辨識出的台語漢字會直接送進網頁的輸入框，
+      // 網頁端不需要任何串接、金鑰或伺服器，學生的語音也留在教育部的服務內。
+      // 註：該 App 的語音辨識是廠商的雲端私有介面（非內建模型），無法內嵌進網頁；
+      //     瀏覽器內建的 webkitSpeechRecognition 對 nan-TW 支援很差，因此台語
+      //     不再走內建辨識，改為引導使用者切換輸入法。
+      const TAIGI_IME_HINT_KEY = "taigi_ime_hint_off";
+
+      function showTaigiImeHint(targetEl) {
+        if (targetEl) targetEl.focus(); // 先把鍵盤叫出來
+        if (localStorage.getItem(TAIGI_IME_HINT_KEY) === "1") {
+          showToast(
+            targetEl
+              ? "請切換到教育部臺灣台語輸入法，按鍵盤上的語音鍵"
+              : "語音鏡像模式叫不出輸入法，台語請改用「文字」模式",
+          );
+          return;
+        }
+        // 桌機沒有系統輸入法可切換；鏡像模式沒有輸入框可聚焦
+        const desktop =
+          window.matchMedia("(pointer: fine)").matches &&
+          !("ontouchstart" in window);
+        document.getElementById("taigiImeDesktopNote").style.display = desktop
+          ? "block"
+          : "none";
+        document.getElementById("taigiImeMirrorNote").style.display = targetEl
+          ? "none"
+          : "block";
+        document.getElementById("taigiImeHintOff").checked = false;
+        openModal("taigiImeModal");
+      }
+
+      function closeTaigiImeHint() {
+        if (document.getElementById("taigiImeHintOff").checked) {
+          localStorage.setItem(TAIGI_IME_HINT_KEY, "1");
+        }
+        closeModal("taigiImeModal");
+      }
+
       // ================= 翻譯路由 =================
       const IDX_ZH = 0; // 繁體中文
       const IDX_TAI = 1; // 臺灣台語
@@ -1572,7 +1706,7 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
             userBaseUrl = u;
           }
           closeModal("settingsModal");
-          showToast("API Key 設定成功");
+          showToast("設定已儲存");
           fetchAndAutoSelectModel();
         } else {
           showToast("請輸入 Key", "error");
@@ -1654,14 +1788,25 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
           } catch (e) {}
         }, 1200);
 
-        document
-          .getElementById("textInput")
-          .addEventListener("keydown", function (e) {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              doTextTranslation();
-            }
-          });
+        // IME 組字中按 Enter 是「選字」，不能當成送出翻譯。
+        // Android 各家輸入法對這三個訊號的支援並不一致，三重防護缺一不可：
+        //   e.isComposing（標準）、keyCode 229（舊版 WebView／部分 IME）、
+        //   以及自行維護的 composition 旗標。
+        const textInputEl = document.getElementById("textInput");
+        let imeComposing = false;
+        textInputEl.addEventListener("compositionstart", () => {
+          imeComposing = true;
+        });
+        textInputEl.addEventListener("compositionend", () => {
+          imeComposing = false;
+        });
+        textInputEl.addEventListener("keydown", function (e) {
+          if (e.isComposing || e.keyCode === 229 || imeComposing) return;
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            doTextTranslation();
+          }
+        });
       };
 
       function setupTextPlayback() {
@@ -1702,6 +1847,13 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
       let textRecognition = null;
       let isTextListening = false;
       function toggleTextVoiceInput() {
+        const srcIdx = document.getElementById("textSourceLang").value;
+        // 臺灣台語不走瀏覽器內建辨識（Chrome 對 nan-TW 支援很差），改用教育部輸入法
+        if (Number(srcIdx) === IDX_TAI) {
+          if (isTextListening) stopTextVoiceInput();
+          showTaigiImeHint(document.getElementById("textInput"));
+          return;
+        }
         if (isTextListening) {
           stopTextVoiceInput();
         } else {
@@ -2305,6 +2457,15 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
 
       function startListening(side) {
         if (isListening) return;
+        const langIdx =
+          side === "top"
+            ? document.getElementById("voiceTopLang").value
+            : document.getElementById("voiceBottomLang").value;
+        // 鏡像模式沒有輸入框，叫不出輸入法：明講限制，不要啟動不準的內建辨識
+        if (Number(langIdx) === IDX_TAI) {
+          showTaigiImeHint(null);
+          return;
+        }
         if (isIOS) {
           if (recognition) recognition.abort();
           recognition = getSpeechRecognition();
