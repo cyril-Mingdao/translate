@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
   【著作權聲明】
-  AI 智能翻譯機 (V68) — 台語教學網頁
+  AI 智能翻譯機 (V69) — 台語教學網頁
   Copyright © 2026 詹宗龍（臺中明道中學）. All rights reserved.
   作者：詹宗龍｜宗龍的台語課 https://sites.google.com/ms.mingdao.edu.tw/tsiam
   【引用來源】
@@ -1372,7 +1372,7 @@
             text-align: left;
           "
         >
-          華台翻譯：本站自製「<a href="https://cyril-mingdao.github.io/taigi-translate/" target="_blank" rel="noopener">台語翻譯系統</a>」，詞庫取自教育部《臺灣台語常用詞辭典》。<br />
+          華台翻譯：本站自製「台語翻譯系統」，詞庫取自教育部《臺灣台語常用詞辭典》。<br />
           台語發音：教育部辭典錄音接音（snd-plus）；下載台語 MP3：意傳科技「媠聲」免費展示服務，每分鐘最多 3 句。<br />
           台語語音輸入：教育部《臺灣台語輸入法》App（iOS／Android
           皆有），由該 App 的鍵盤語音鍵直接輸入，本頁不經手錄音。<br />
@@ -2518,6 +2518,7 @@ Output ONLY the Traditional Chinese translation, nothing else.`;
         attachImeSafeEnter(document.getElementById("textInput"), () =>
           doTextTranslation(),
         );
+        setupAutoGrowInput(document.getElementById("textInput"));
         ["topOriginalText", "bottomOriginalText"].forEach((id) => {
           attachImeSafeEnter(document.getElementById(id), () => {
             if (editingSide) endTaigiBubbleInput(true);
@@ -3309,6 +3310,28 @@ Output ONLY the Traditional Chinese translation, nothing else.`;
           v = voices.find((voice) => voice.lang.startsWith(l.split("-")[0]));
         if (v) u.voice = v;
         synth.speak(u);
+      }
+      // 文字模式輸入框：高度隨文字長度自動調整（最少 CSS 原高度，最多畫面 60%，超過才捲動）
+      function setupAutoGrowInput(el) {
+        if (!el) return;
+        const minH = el.offsetHeight || 140;
+        const grow = () => {
+          el.style.height = "auto";
+          const maxH = Math.max(minH, window.innerHeight * 0.6);
+          const h = Math.min(Math.max(el.scrollHeight + 4, minH), maxH);
+          el.style.height = h + "px";
+          el.style.overflowY = el.scrollHeight + 4 > maxH ? "auto" : "hidden";
+        };
+        // 語音輸入、貼上、清空、交換語言等程式改值也要跟著長
+        const desc = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+        Object.defineProperty(el, "value", {
+          get() { return desc.get.call(this); },
+          set(v) { desc.set.call(this, v); grow(); },
+          configurable: true,
+        });
+        el.addEventListener("input", grow);
+        window.addEventListener("resize", grow);
+        grow();
       }
     </script>
   </body>
