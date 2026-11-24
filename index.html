@@ -1,42 +1,45 @@
 <!doctype html>
 <!--
   【著作權聲明】
-  AI 智能翻譯機 (V66.0) — 台語教學網頁
+  AI 智能翻譯機 (V67) — 台語教學網頁
   Copyright © 2026 詹宗龍（臺中明道中學）. All rights reserved.
+  作者：詹宗龍｜宗龍的台語課 https://sites.google.com/ms.mingdao.edu.tw/tsiam
   【引用來源】
-  台語用字與拼音參考中華民國教育部《臺灣台語常用詞辭典》，其著作權屬教育部。
-  臺羅發音播放引用 oikasu 製作之 snd.js（https://oikasu1.github.io/snd/），程式與音檔著作權屬原作者；
-  其中部分音檔取自中華民國教育部《臺灣台語常用詞辭典》。
-  臺羅字型使用「豆腐烏 Tauhu Oo」（https://tauhu.tw/），依 SIL Open Font License 1.1 授權。
+  華台翻譯引擎與詞庫：引用本人自製「台語翻譯系統」（https://cyril-mingdao.github.io/taigi-translate/ 的 taigi-mt.js、dict.js），
+    辭典資料取自中華民國教育部《臺灣台語常用詞辭典》（https://sutian.moe.edu.tw/，CC BY-NC-ND 2.5 TW），著作權屬教育部。
+  台語發音：引用本人自製 snd-plus.js（https://cyril-mingdao.github.io/taigi-class-games/assets/snd-plus.js），
+    錄音取自教育部《臺灣台語常用詞辭典》。
+  台語整句語音下載：意傳科技「媠聲」免費展示服務（https://ithuan.tw/，限流每分鐘 3 句），著作權屬原權利人。
+  其他語言翻譯：Google Gemini API（使用者自備 API Key）；其他語言朗讀使用瀏覽器內建語音。
+  字型：豆腐烏 Tauhu Oo（https://tauhu.tw/，SIL Open Font License 1.1）；Charis SIL（SIL Open Font License 1.1）。
   圖示使用 Font Awesome Free（Fonticons, Inc.，CC BY 4.0／SIL OFL 1.1／MIT）。
-  華台詞彙對照表 g2m2.js 取自 gnisew 之 tools（https://github.com/gnisew/tools），著作權屬原作者。
   本網頁之程式碼、版面與教案設計著作權屬詹宗龍所有，僅供非營利之教育教學使用；前述引用之他人作品，著作權仍屬各原權利人。
   未經著作權人書面授權，不得重製、改作、散布或修改本網頁之全部或一部分。
 -->
-<html lang="zh-TW">
+<html lang="zh-Hant-TW">
   <head>
     <meta charset="UTF-8" />
     <meta name="author" content="詹宗龍（臺中明道中學）">
     <meta name="copyright" content="© 2026 詹宗龍（臺中明道中學）。保留一切權利。">
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>AI 智能翻譯機 (V66.0)</title>
+    <meta name="description" content="AI 智能翻譯機：華語、台語互翻免 API Key（台語漢字＋臺羅、可聽發音），其他語言用 Gemini 翻譯，另有面對面語音翻譯模式。">
+    <!-- v67：拿掉 user-scalable=no／maximum-scale=1，讓視力不好的學生可以放大 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111111" />
+    <title>AI 智能翻譯機</title>
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111'/%3E%3Ctext x='32' y='45' font-size='36' text-anchor='middle' fill='%23FFD400' font-family='sans-serif' font-weight='700'%3E譯%3C/text%3E%3C/svg%3E"
     />
+    <!-- Font Awesome 只載 CSS 版（v66 同時載 CSS 與 JS 兩份，重複） -->
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
-    <!-- 台語擴充字字型：g2m2 詞庫會輸出「𠢕」這類 CJK 擴充 B 區漢字，
-         裝置沒字型會顯示成豆腐□。先用系統既有的台灣字型，再退回豆腐字型 tauhu-oo。 -->
-    <link href="https://tauhu.tw/tauhu-oo.css" rel="stylesheet" />
-    <script src="https://cyril-mingdao.github.io/taigi-tts/snd-gapless.js"></script>
-    <!-- 華台翻譯詞庫（烏衣行 oikasu.com，12.7 萬筆，限個人非營利教育用途） -->
-    <script src="g2m2.js"></script>
+    <!-- 漢字字型：沿用台語翻譯系統的豆腐烏分包（只下載畫面用到的字）；臺羅字型：Charis SIL 臺羅用字子集 -->
+    <link rel="stylesheet" href="https://cyril-mingdao.github.io/taigi-translate/fonts/tauhu.css" />
+    <link rel="preload" href="https://cyril-mingdao.github.io/taigi-translate/dict.js" as="script" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Charis+SIL:wght@400;700&amp;display=swap&amp;text=%20%21%27%28%29%2C-./0123456789%3A%3B%3FABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz%C3%80%C3%81%C3%82%C3%8A%C3%8C%C3%8D%C3%8E%C3%92%C3%93%C3%94%C3%9A%C3%9B%C3%A0%C3%A1%C3%A2%C3%A8%C3%A9%C3%AA%C3%AC%C3%AD%C3%AE%C3%B2%C3%B3%C3%B4%C3%B9%C3%BA%C3%BB%C4%80%C4%81%C4%92%C4%93%C4%9B%C4%AA%C4%AB%C5%84%C5%88%C5%8C%C5%8D%C5%91%C5%AA%C5%AB%C5%B1%C7%8E%C7%90%C7%92%C7%94%C7%B8%C7%B9%CC%80%CC%81%CC%82%CC%84%CC%8B%CC%8C%CC%8D%CD%98%E1%B8%BF%E2%80%93%E2%80%95%E2%80%98%E2%80%99%E2%80%9C%E2%80%9D%E2%80%A6%E2%94%80" media="print" onload="this.media='all'" />
     <style>
       /* ================= 全域設定 ================= */
       :root {
@@ -857,9 +860,412 @@
           padding: 15px;
         }
       }
+
+      /* =====================================================================
+         v67 宗龍的台語課主視覺：黑 #111111／黃 #FFD400／白 #FFFFFF
+         文字框一律白底黑字、加粗外框，投影與手機都看得清楚。
+         ===================================================================== */
+      :root {
+        --black: #111111;
+        --yellow: #ffd400;
+        --white: #ffffff;
+        --g1: #2a2a2a;
+        --g2: #f5f5f5;
+        --primary-color: #111111;
+        --danger-color: #c62828;
+        --bg-color: #f5f5f5;
+        --card-bg: #ffffff;
+        --text-color: #111111;
+        --mirrored-bg-top: #2a2a2a;
+        --mirrored-bg-bottom: #f5f5f5;
+        --tl-font: "Charis SIL", "Gentium Plus", "Noto Serif", "Times New Roman", serif;
+      }
+      body {
+        font-family: "TaigiTauhu", "Tauhu Oo", "Noto Sans TC", "Microsoft JhengHei",
+          "PingFang TC", system-ui, sans-serif;
+        background: var(--g2);
+        color: var(--black);
+      }
+
+      /* ---- 頂端模式切換（黑膠囊，選到的黃底黑字） ---- */
+      .header-controls {
+        background: var(--black);
+        border: 2px solid var(--yellow);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      }
+      .ctrl-btn {
+        color: var(--white);
+        font-weight: 700;
+      }
+      .ctrl-btn:hover {
+        color: var(--yellow);
+      }
+      .ctrl-btn.active,
+      body.voice-mode-portrait .ctrl-btn.active {
+        background: var(--yellow);
+        color: var(--black);
+        box-shadow: none;
+      }
+      body.voice-mode-portrait .ctrl-btn {
+        background: var(--black);
+        color: var(--white);
+        border: 2px solid var(--yellow);
+      }
+
+      /* ---- 文字模式卡片 ---- */
+      #textModeContainer {
+        padding: 0;
+        justify-content: flex-start;
+      }
+      .app-bar {
+        width: 100%;
+        background: var(--black);
+        color: var(--white);
+        border-bottom: 5px solid var(--yellow);
+        padding: 14px clamp(12px, 1.6vw, 28px);
+        padding-right: 260px; /* 留位給右上角模式切換 */
+        flex: none;
+      }
+      .app-bar h1 {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 30px);
+        letter-spacing: 2px;
+      }
+      .app-bar h1 b {
+        color: var(--yellow);
+      }
+      .app-bar p {
+        margin: 4px 0 0;
+        color: #ddd;
+        font-size: 14px;
+      }
+      @media (max-width: 480px) {
+        .app-bar {
+          padding-top: 64px; /* 手機：模式切換在正上方置中 */
+          padding-right: clamp(12px, 1.6vw, 28px);
+        }
+      }
+      .text-card {
+        max-width: none;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+        padding: 16px clamp(12px, 1.6vw, 28px) 8px;
+        flex: 1 0 auto;
+      }
+      .controls select,
+      select#textSourceLang,
+      select#textTargetLang {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+        font-weight: 700;
+        font-size: 17px;
+        background-image: linear-gradient(45deg, transparent 50%, var(--black) 50%),
+          linear-gradient(135deg, var(--black) 50%, transparent 50%);
+        background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+        background-size: 6px 6px;
+        background-repeat: no-repeat;
+        padding-right: 30px;
+      }
+      .swap-btn {
+        background: var(--yellow);
+        color: var(--black);
+        border: 2px solid var(--black);
+        width: 46px;
+        height: 46px;
+        padding: 0;
+      }
+      .swap-btn:hover {
+        background: var(--black);
+        color: var(--yellow);
+      }
+
+      /* 文字框：白底、黑字、2px 深色外框，聚焦時黃色光暈 */
+      textarea,
+      textarea.output-box {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--g1);
+        border-radius: 12px;
+        font-size: 20px;
+        line-height: 1.6;
+        padding: 14px 16px;
+      }
+      textarea {
+        height: 140px;
+      }
+      textarea.output-box {
+        height: 170px;
+        -webkit-user-select: text;
+        user-select: text; /* 學生可以只選取一段結果 */
+      }
+      textarea:focus {
+        border-color: var(--black);
+        box-shadow: 0 0 0 4px var(--yellow);
+      }
+      textarea::placeholder {
+        color: #777;
+      }
+      .box-label {
+        font-weight: 700;
+        font-size: 14px;
+        margin: 2px 0 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .box-label .tag {
+        background: var(--black);
+        color: var(--yellow);
+        border-radius: 6px;
+        padding: 1px 8px;
+        font-size: 12px;
+      }
+
+      /* 圓形小按鈕：白底黑框，滑過變黃 */
+      .clear-btn,
+      .mic-input-btn,
+      .copy-input-btn,
+      .paste-input-btn,
+      .copy-output-btn,
+      .play-btn,
+      .download-btn {
+        width: 40px;
+        height: 40px;
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+        font-size: 16px;
+      }
+      .clear-btn:hover,
+      .mic-input-btn:hover,
+      .copy-input-btn:hover,
+      .paste-input-btn:hover,
+      .copy-output-btn:hover,
+      .play-btn:hover,
+      .download-btn:hover {
+        background: var(--yellow);
+        color: var(--black);
+      }
+      .clear-btn:hover {
+        color: var(--danger-color);
+      }
+      .play-btn {
+        background: var(--yellow);
+      }
+      .play-btn.playing,
+      .speech-bubble.playing {
+        outline: 3px solid var(--yellow);
+        outline-offset: 2px;
+      }
+      .play-btn.playing {
+        background: var(--black);
+        color: var(--yellow);
+      }
+      .mic-input-btn.listening {
+        background: var(--danger-color);
+        border-color: var(--danger-color);
+        color: var(--white);
+      }
+
+      button.translate-btn {
+        background: var(--yellow);
+        color: var(--black);
+        border: 2px solid var(--black);
+        font-size: 20px;
+        box-shadow: 0 4px 0 var(--black);
+      }
+      button.translate-btn:hover:not(:disabled) {
+        background: var(--black);
+        color: var(--yellow);
+      }
+      button.translate-btn:disabled {
+        background: #e6e6e6;
+        color: #555;
+        border-color: #999;
+        box-shadow: none;
+      }
+
+      #model-selector-container {
+        background: var(--white);
+        border: 2px dashed var(--g1);
+        color: var(--black);
+      }
+      #current-model-select {
+        max-width: 260px;
+        border: 1px solid var(--g1);
+        background: var(--white);
+        color: var(--black);
+      }
+      .no-key-note {
+        display: none;
+        background: var(--white);
+        border-left: 6px solid var(--yellow);
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .no-key-note a {
+        color: var(--black);
+        font-weight: 700;
+      }
+
+      .site-foot {
+        width: 100%;
+        text-align: center;
+        font-size: 13px;
+        color: #555;
+        padding: 10px 12px 18px;
+        flex: none;
+      }
+      .site-foot a {
+        color: var(--black);
+      }
+
+      /* ---- 彈窗 ---- */
+      .custom-window {
+        border: 3px solid var(--black);
+      }
+      .custom-window h3 {
+        color: var(--black);
+      }
+      .custom-window input:not([type="checkbox"]) {
+        background: var(--white);
+        border: 2px solid var(--g1);
+        color: var(--black);
+      }
+      .custom-window input:not([type="checkbox"]):focus {
+        box-shadow: 0 0 0 3px var(--yellow);
+      }
+      .btn-primary {
+        background: var(--yellow);
+        color: var(--black);
+        border: 2px solid var(--black);
+      }
+      .btn-secondary {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+      }
+      .btn-warning {
+        background: var(--black);
+        color: var(--yellow);
+      }
+      .btn-danger {
+        background: var(--white);
+        color: var(--danger-color);
+        border: 2px solid var(--danger-color);
+      }
+      .polish-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        text-align: left;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 14px;
+      }
+      .toast {
+        background: var(--black);
+        color: var(--white);
+        border: 2px solid var(--yellow);
+      }
+      .toast.error {
+        background: var(--danger-color);
+        border-color: var(--danger-color);
+      }
+
+      /* ---- 語音（面對面）模式：上半黑底、下半淺灰，泡泡一律白底黑字 ---- */
+      .top-half {
+        border-bottom: 4px solid var(--yellow);
+      }
+      .bottom-half {
+        border-top: none;
+      }
+      #splitter::after {
+        background: var(--yellow);
+        width: 56px;
+        height: 6px;
+      }
+      .lang-select-container {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+      }
+      .voice-lang-select {
+        color: var(--black);
+        border-bottom: 1px dashed var(--black);
+      }
+      .speech-bubble {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--g1);
+        font-size: 20px;
+        line-height: 1.55;
+      }
+      .speech-bubble.translated {
+        background: var(--white);
+        color: var(--black);
+        border: 3px solid var(--yellow);
+      }
+      .bottom-half .speech-bubble.translated {
+        border-color: var(--yellow);
+        color: var(--black);
+      }
+      .bubble-wrapper.editing .speech-bubble {
+        outline: 3px solid var(--yellow);
+      }
+      .copy-btn {
+        background: var(--white);
+        color: var(--black);
+        border: 1px solid var(--g1);
+      }
+      .copy-btn:hover {
+        background: var(--yellow);
+        color: var(--black);
+      }
+      .send-btn {
+        background: var(--yellow);
+        color: var(--black);
+      }
+      .mic-btn,
+      #bottomMicBtn {
+        background-color: var(--yellow);
+        color: var(--black);
+        border: 3px solid var(--black);
+      }
+      #topMicBtn {
+        background-color: var(--yellow);
+        color: var(--black);
+        border: 3px solid var(--white);
+      }
+      @media (max-width: 520px) {
+        .controls {
+          gap: 6px;
+        }
+        .controls select,
+        select#textSourceLang,
+        select#textTargetLang {
+          font-size: 15px;
+          padding: 10px 24px 10px 8px;
+          background-position: calc(100% - 14px) 50%, calc(100% - 8px) 50%;
+        }
+        .swap-btn {
+          width: 40px;
+          height: 40px;
+        }
+        textarea,
+        textarea.output-box {
+          font-size: 18px;
+        }
+      }
     </style>
   </head>
-  <body oncontextmenu="return false;">
+  <body oncontextmenu="return /TEXTAREA|INPUT/.test(event.target.tagName);">
     <div class="header-controls" id="headerControls">
       <button
         class="ctrl-btn active"
@@ -888,7 +1294,9 @@
     <div id="settingsModal" class="modal-overlay">
       <div class="custom-window">
         <h3><i class="fas fa-key"></i> 設定 API Key</h3>
-        <p>請輸入 Google Gemini API Key。</p>
+        <p style="line-height: 1.6">
+          華語⇄台語互翻<b>毋免 Key</b>。<br />英、日、韓…等其他語言才需要 Google Gemini API Key。
+        </p>
         <div class="input-group">
           <input
             type="password"
@@ -909,6 +1317,10 @@
             <i class="fas fa-sync-alt"></i> 重新偵測可用模型
           </button>
         </div>
+        <label class="polish-row">
+          <input type="checkbox" id="polishToggle" onchange="togglePolish(this)" />
+          <span>華→台時，請 Gemini 調整台語語序（需 Key；可能改到教育部用字，預設關閉）</span>
+        </label>
         <details class="input-group">
           <summary>進階</summary>
           <div class="input-group">
@@ -960,12 +1372,11 @@
             text-align: left;
           "
         >
-          台語翻譯詞庫：烏衣行「閩南語翻譯系統」(oikasu.com)，限個人非營利教育用途。<br />
-          台語語音：意傳科技「媠聲」(ithuan.tw)，免費展示服務、限流 3
-          句/分鐘；備援為教育部《臺灣台語常用詞辭典》音檔接音。<br />
+          華台翻譯：本站自製「<a href="https://cyril-mingdao.github.io/taigi-translate/" target="_blank" rel="noopener">台語翻譯系統</a>」，詞庫取自教育部《臺灣台語常用詞辭典》。<br />
+          台語發音：教育部辭典錄音接音（snd-plus）；下載台語 MP3：意傳科技「媠聲」免費展示服務，每分鐘最多 3 句。<br />
           台語語音輸入：教育部《臺灣台語輸入法》App（iOS／Android
           皆有），由該 App 的鍵盤語音鍵直接輸入，本頁不經手錄音。<br />
-          台語擴充字字型：豆腐工作室 tauhu-oo (tauhu.tw)。
+          字型：豆腐烏 Tauhu Oo（tauhu.tw）、Charis SIL。
         </div>
       </div>
     </div>
@@ -1047,12 +1458,16 @@
     <div id="toast-container"></div>
 
     <div id="textModeContainer">
+      <header class="app-bar">
+        <h1>AI <b>智能翻譯機</b></h1>
+        <p>華語⇄台語毋免 API Key：台語漢字＋臺羅，會當聽發音。其他語言用 Gemini 翻譯。</p>
+      </header>
       <div class="text-card">
-        <h2 class="app-title">
-          <i class="fas fa-robot"></i> AI 智能翻譯機 (V66.0)
-        </h2>
-        <div class="app-subtitle">詹宗龍 製作</div>
-        <div id="model-selector-container">
+        <div id="noKeyNote" class="no-key-note">
+          目前無設定 API Key：<b>華語⇄台語</b>照常會當用；英、日、韓…等其他語言愛先到右上角「設定」貼 Key
+          （<a href="https://sites.google.com/ms.mingdao.edu.tw/tsiam/1/%E5%85%8D%E8%B2%BB%E7%94%B3%E8%AB%8Bapi" target="_blank" rel="noopener">免費申請</a>）。
+        </div>
+        <div id="model-selector-container" style="display: none">
           <span><i class="fas fa-microchip"></i> 使用模型:</span
           ><select id="current-model-select" onchange="manualSelectModel()">
             <option value="">正在偵測...</option>
@@ -1068,7 +1483,8 @@
         <div class="input-wrapper">
           <textarea
             id="textInput"
-            placeholder="請輸入要翻譯的文字..."
+            placeholder="請輸入要翻譯的文字…（按 Enter 翻譯，Shift＋Enter 換行）"
+            aria-label="要翻譯的文字"
           ></textarea>
         </div>
         <div class="input-btn-row">
@@ -1099,11 +1515,22 @@
           </button>
         </div>
 
+        <button
+          id="textTranslateBtn"
+          class="translate-btn"
+          onclick="doTextTranslation()"
+        >
+          開始翻譯
+        </button>
+        <div class="box-label" style="margin-top: 16px">
+          <span class="tag">結果</span> 台語會出現兩行：台語漢字＋臺羅
+        </div>
         <div class="output-wrapper">
           <textarea
             id="textOutput"
             class="output-box"
             placeholder="翻譯結果..."
+            aria-label="翻譯結果"
             readonly
           ></textarea>
         </div>
@@ -1118,29 +1545,29 @@
           <button
             class="download-btn"
             onclick="downloadTextAudio()"
-            title="下載音檔"
+            title="下載語音 MP3（台語用意傳媠聲，每分鐘最多 3 句）"
+            aria-label="下載語音"
           >
             <i class="fas fa-download"></i>
           </button>
           <button
             class="play-btn"
             onclick="playTextTranslation(this)"
-            title="朗讀翻譯結果"
+            title="聽發音（台語用教育部辭典錄音；再按一下停止）"
+            aria-label="聽發音"
           >
             <i class="fas fa-volume-up"></i>
           </button>
         </div>
-        <button
-          id="textTranslateBtn"
-          class="translate-btn"
-          onclick="doTextTranslation()"
-        >
-          開始翻譯
-        </button>
-        <div id="textLoading" class="loading-text">
-          <i class="fas fa-spinner fa-spin"></i> Gemini 正在思考中...
-        </div>
       </div>
+      <footer class="site-foot">
+        © 2026 詹宗龍（臺中明道中學）｜<a
+          href="https://sites.google.com/ms.mingdao.edu.tw/tsiam"
+          target="_blank"
+          rel="noopener"
+          >宗龍的台語課</a
+        >
+      </footer>
     </div>
 
     <div id="voiceMirroredContainer">
@@ -1245,313 +1672,383 @@
       </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script>
       let userApiKey = "";
       let userBaseUrl = "https://generativelanguage.googleapis.com";
       let selectedModel = "";
 
-      // ================= g2m2 華台辭典翻譯引擎 =================
-      // 詞庫與演算法來源：烏衣行「閩南語翻譯系統」(oikasu.com / gnisew tools)。
-      // g2m2.js 為壓縮詞庫（127,058 筆，格式「次數=台語詞=華語詞」，單字母為高頻漢字縮寫）。
-      // 本檔移植其核心演算法：異體字正規化 → 最長詞優先排序 → 佔位符兩階段替換 → 去分詞空格。
-      // ⚠️ 授權：本詞庫限用於個人非營利之教育用途；規則式替換不改語序，長句仍需人工校正。
-      const G2M2 = (function () {
-        // 異體字正規化對照表（VM → VN）
-        const VM = ["－－", "－－", "﹗", "﹙", "﹚", "﹐", "﹑", "﹒", "﹕", "﹔", "﹖", "︰", "了", "力", "女", "不", "丹", "什", "六", "令", "北", "句", "立", "列", "劣", "吏", "年", "老", "肋", "串", "冷", "利", "卵", "吝", "呂", "尿", "弄", "更", "李", "沈", "牢", "良", "車", "辰", "里", "阮", "來", "例", "兩", "刺", "囹", "奈", "念", "怜", "拉", "易", "杻", "林", "泌", "泥", "炙", "狀", "秊", "金", "亮", "便", "咽", "契", "律", "怒", "拏", "拾", "柳", "洛", "流", "玲", "省", "胐", "若", "郎", "陋", "倫", "凉", "料", "旅", "朗", "栗", "浪", "烈", "烙", "狼", "珞", "琉", "留", "紐", "索", "茶", "豈", "郞", "勒", "匿", "參", "崙", "捻", "掠", "敎", "梁", "梨", "殺", "淋", "淚", "淪", "率", "理", "略", "異", "硫", "笠", "粒", "累", "羚", "聆", "脚", "連", "陵", "陸", "鹿", "勞", "喇", "喞", "嵐", "廊", "復", "惡", "温", "痢", "菉", "菱", "裂", "量", "隆", "靓", "亂", "塞", "廉", "慄", "暈", "溜", "溺", "滑", "煉", "碌", "祿", "稜", "落", "葉", "虜", "裏", "裡", "賂", "賈", "路", "酪", "鈴", "随", "零", "雷", "僚", "寧", "屢", "漏", "漣", "綠", "綾", "裸", "說", "領", "凜", "劉", "寮", "履", "憐", "戮", "撚", "數", "樂", "樓", "瑩", "璉", "磊", "練", "蓮", "蓼", "諒", "論", "輦", "輪", "閭", "隣", "魯", "黎", "擄", "曆", "歷", "燎", "燐", "璘", "盧", "罹", "諾", "遼", "錄", "駱", "龍", "龜", "勵", "嶺", "殮", "濕", "濫", "療", "磻", "縷", "聯", "臨", "螺", "鍊", "隸", "壘", "濾", "獵", "禮", "糧", "藍", "離", "壟", "廬", "懶", "櫓", "簾", "羅", "臘", "識", "類", "麗", "爐", "礪", "藺", "蘆", "襤", "醴", "欄", "爛", "癩", "蘭", "蠟", "露", "籠", "聾", "讀", "轢", "戀", "蘿", "邏", "鱗", "麟", "靈", "鷺", "戆", "驪", "鸞", "兀", "凞", "切", "嗀", "塚", "宅", "度", "﨨", "廓", "拓", "晴", "暴", "洞", "猪", "益", "礼", "神", "祥", "福", "精", "糖", "羽", "﨑", "行", "見", "諸", "輻", "逸", "都", "降", "靖", "飯", "飼", "館", "鶴", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "󿗧", "󿕅", "󸾯", "", "岀", "没", "秃", "劵", "刴", "抝", "殁", "畁", "爲", "娱", "挟", "眞", "欵", "浄", "衆", "歳", "輰", "𧗊", "麽", "奬", "縆", "駡", "腟", "𤖠", "𦉛", "隷", "鲫", "櫉", "赢", "讉", "鼹", "𤒿", "廰", "鑚", "戅", "朏"];
-        const VN = ["──", "──", "！", "（", "）", "，", "、", "。", "：", "；", "？", "：", "了", "力", "女", "不", "丹", "什", "六", "令", "北", "句", "立", "列", "劣", "吏", "年", "老", "肋", "串", "冷", "利", "卵", "吝", "呂", "尿", "弄", "更", "李", "沈", "牢", "良", "車", "辰", "里", "阮", "來", "例", "兩", "刺", "囹", "奈", "念", "怜", "拉", "易", "杻", "林", "泌", "泥", "炙", "狀", "秊", "金", "亮", "便", "咽", "契", "律", "怒", "孥", "拾", "柳", "洛", "流", "玲", "省", "朏", "若", "郎", "陋", "倫", "涼", "料", "旅", "朗", "栗", "浪", "烈", "烙", "狼", "珞", "琉", "留", "紐", "索", "茶", "豈", "郎", "勒", "匿", "參", "崙", "捻", "掠", "教", "梁", "梨", "殺", "淋", "淚", "淪", "率", "理", "略", "異", "硫", "笠", "粒", "累", "羚", "聆", "腳", "連", "陵", "陸", "鹿", "勞", "喇", "唧", "嵐", "廊", "復", "惡", "溫", "痢", "菉", "菱", "裂", "量", "隆", "靚", "亂", "塞", "廉", "慄", "暈", "溜", "溺", "滑", "煉", "碌", "祿", "稜", "落", "葉", "虜", "裏", "裡", "賂", "賈", "路", "酪", "鈴", "隨", "零", "雷", "僚", "寧", "屢", "漏", "漣", "綠", "綾", "裸", "說", "領", "凜", "劉", "寮", "履", "憐", "戮", "撚", "數", "樂", "樓", "瑩", "璉", "磊", "練", "蓮", "蓼", "諒", "論", "輦", "輪", "閭", "隣", "魯", "黎", "擄", "曆", "歷", "燎", "燐", "璘", "盧", "罹", "諾", "遼", "錄", "駱", "龍", "龜", "勵", "嶺", "殮", "溼", "濫", "療", "磻", "縷", "聯", "臨", "螺", "鍊", "隸", "壘", "濾", "獵", "禮", "糧", "藍", "離", "壟", "廬", "懶", "櫓", "簾", "羅", "臘", "識", "類", "麗", "爐", "礪", "藺", "蘆", "襤", "醴", "欄", "爛", "賴", "蘭", "蠟", "露", "籠", "聾", "讀", "轢", "戀", "蘿", "邏", "鱗", "麟", "靈", "鷺", "戇", "驪", "鸞", "兀", "凞", "切", "嗀", "塚", "宅", "度", "鋅", "廓", "拓", "晴", "暴", "洞", "猪", "益", "礼", "神", "祥", "福", "精", "糖", "羽", "崎", "行", "見", "諸", "輻", "逸", "都", "降", "靖", "飯", "飼", "館", "鶴", "𫝞", "𫝛", "𫝏", "𫝺", "𫝻", "𫟂", "𫝙", "𫟊", "𪜶", "𬦰", "𪹚", "𫝘", "𫝾", "𫞭", "𫞻", "𫞼", "𫟧", "𫠛", "𫣆", "𬑎", "𬖐", "𰹬", "𬠖", "𫝞", "𫝛", "𫝏", "𫝺", "𫝻", "𰣻", "𫟂", "𫝙", "𫟊", "𱱿", "𰣻", "𱱿", "𰹬", "", "出", "沒", "禿", "券", "剁", "拗", "歿", "畀", "為", "娛", "挾", "真", "欸", "淨", "眾", "歲", "暢", "盡", "麼", "獎", "緪", "罵", "膣", "牆", "罅", "隸", "鯽", "櫥", "贏", "譴", "鼴", "㸐", "廳", "鑽", "戇", "胐"];
-        // 詞庫解壓對照：單字母 → 高頻漢字；圈圈字母 → 原始字母
-        const TXT_AA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        const TXT_KK = "一人大不無好來會子有頭个的到下著得毋去了這真水心家過做出事上生在天很多個小時要講麼你起地食用面開三沒手打愛日較氣行年學公想啊";
-        const TXT_EE = "ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ⓪①②③④⑤⑥⑦⑧⑨";
-        const mapKK = {},
-          mapEE = {};
-        for (let i = 0; i < TXT_AA.length; i++) {
-          mapKK[TXT_AA[i]] = TXT_KK[i];
-          mapEE[TXT_EE[i]] = TXT_AA[i];
-        }
+      // ================= 台語翻譯引擎（v67 起改用自製「台語翻譯系統」） =================
+      // 來源：https://cyril-mingdao.github.io/taigi-translate/ 的 taigi-mt.js（引擎）＋ dict.js（詞庫）。
+      //   詞庫取自教育部《臺灣台語常用詞辭典》＋自編核心詞表，該站每週一自動更新，本頁直接引用、自動跟上。
+      //   華→台：TaigiMT.translate()，同時給台語漢字與臺羅（調符），不需要 API Key。
+      //   台→華：本頁用同一份詞庫「反查」（台語詞 → 華語詞，最長詞優先），也不需要 API Key；
+      //          有 Key 時再請 Gemini 把反查底稿潤成通順華語。
+      const TT_BASE = "https://cyril-mingdao.github.io/taigi-translate/";
+      const SNDPLUS_URL =
+        "https://cyril-mingdao.github.io/taigi-class-games/assets/snd-plus.js";
 
-        // 詞庫解壓：單字母 → 高頻漢字；圈圈字母 → 原始字母
-        function decode(s) {
-          let a = "";
-          for (const ch of s) a += mapKK[ch] || ch;
-          let b = "";
-          for (const ch of a) b += mapEE[ch] || ch;
-          return b;
-        }
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.async = true;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("載入失敗：" + src));
+          document.body.appendChild(s);
+        });
+      }
 
-        // 異體字正規化（例：﹒→。、凉→涼），讓輸入能對上詞庫用字
-        function normVariant(t) {
-          for (let i = 0; i < VM.length; i++) {
-            if (!VM[i] || VM[i] === VN[i]) continue;
-            if (t.indexOf(VM[i]) !== -1) t = t.split(VM[i]).join(VN[i]);
-          }
-          return t;
-        }
-
+      const TaigiEngine = (function () {
+        let loading = null;
         let ready = false;
-        let C, D, E, F; // C:華(依華語字數排) D:台 ／ E:台(依台語字數排) F:華
+        let R = null; // 台語詞 → 華語詞
+        let T = null; // 台語詞 → 臺羅（判斷是不是台語詞用）
+        let SENT_R = null; // 台語整句 → 華語整句（辭典例句）
+        const MAXK = 8;
+        // 反查來源優先序：核心表 > 高中教材 > 700字表 > 詞彙比較 > 例句短語 > 華台同形 > 義項反查
+        const RANK = { c: 0, p: 1, e: 2, b: 3, s: 4, w: 5, g: 6 };
+        const PUNC = /[\s，。、！？；：「」『』（）()〔〕【】…—─,.!?;:"'~～\-]/g;
+        const HAN1 = /^(?:[㐀-鿿豈-﫿]|[\ud840-\ud87f][\udc00-\udfff])$/;
+        const norm = (s) => (s || "").replace(PUNC, "");
 
-        function build() {
-          if (ready) return;
-          const items = [];
-          for (const it of ww.split("\t")) {
-            const p = it.split("=");
-            if (p.length < 2) continue;
-            const cnt = parseInt(p[0], 10) || 0;
-            const tai = decode(p[1]);
-            const hua = p[2] ? decode(p[2]) : tai;
-            if (!tai || !hua) continue;
-            items.push([cnt, tai, hua]);
+        function buildReverse(dict) {
+          R = Object.create(null);
+          const best = Object.create(null);
+          for (const zh in dict.m) {
+            dict.m[zh].forEach((c, idx) => {
+              const tg = c[0],
+                src = c[1];
+              if (!tg || !(src in RANK)) return; // f（高頻義項反查）太雜，不用
+              const sc = idx * 10 + RANK[src];
+              if (!(tg in best) || sc < best[tg]) {
+                best[tg] = sc;
+                R[tg] = zh;
+              }
+            });
           }
-          const len = (t) => Array.from(t).length; // 用 Array.from 才數得對 CJK 擴充區
-          const byHua = items
-            .slice()
-            .sort(
-              (x, y) =>
-                len(y[2]) - len(x[2]) || y[0] - x[0] || x[1].localeCompare(y[1]),
-            );
-          C = byHua.map((i) => i[2]);
-          D = byHua.map((i) => i[1]);
-          const byTai = items
-            .slice()
-            .sort(
-              (x, y) =>
-                len(y[1]) - len(x[1]) || y[0] - x[0] || x[2].localeCompare(y[2]),
-            );
-          E = byTai.map((i) => i[1]);
-          F = byTai.map((i) => i[2]);
-          ready = true;
+          // 反查時一詞多義、詞庫預設不適合當華語的，人工指定（實測校正）
+          Object.assign(R, {
+            無: "沒有", 咧: "在", 老爸: "爸爸", 老母: "媽媽", 予: "給", 足: "很",
+            兜: "家", 頭殼: "頭", 點: "點", 分: "分", 寡: "些", 做工課: "工作",
+            阮兜: "我家", 阮厝: "我家",
+          });
+          T = dict.t;
+          SENT_R = new Map();
+          (dict.s || []).forEach((r) => {
+            if (r[1] && !SENT_R.has(norm(r[1]))) SENT_R.set(norm(r[1]), r[0]);
+          });
         }
 
-        // 兩階段替換：命中先換唯一佔位符，全部掃完再換回譯文。
-        // 目的是避免短詞吃掉長詞的機會，也避免譯文被後面的規則二次翻譯。
-        function convert(text, from, to) {
-          let v = normVariant(text);
-          const hit = [];
-          for (let i = 0; i < from.length; i++) {
-            const s = from[i];
-            if (s && v.indexOf(s) !== -1) {
-              v = v.split(s).join("㈰" + i + "㈱");
-              hit.push(i);
+        function load() {
+          if (ready) return Promise.resolve();
+          if (loading) return loading;
+          loading = loadScript(TT_BASE + "dict.js")
+            .then(() => loadScript(TT_BASE + "taigi-mt.js"))
+            .then(() => {
+              const dict = window.TAIGI_DICT;
+              TaigiMT.init(dict); // init 會把 m、t 解壓成物件
+              buildReverse(dict);
+              window.TAIGI_DICT = null;
+              ready = true;
+              updateTranslateBtn();
+            })
+            .catch((e) => {
+              loading = null;
+              updateTranslateBtn();
+              throw e;
+            });
+          return loading;
+        }
+
+        // 華 → 台：回傳 { han, tl }
+        function hua2tai(text) {
+          const r = TaigiMT.translate(text);
+          if (r.memory) {
+            const han = r.memory[1];
+            return { han, tl: r.memory[2] || TaigiMT.romanize(han) };
+          }
+          return { han: r.han, tl: r.tl };
+        }
+
+        // 一段連續漢字：動態規劃找「詞越長越好」的切法，再逐詞反查
+        function segRun(run) {
+          const a = Array.from(run),
+            n = a.length,
+            best = [0],
+            back = [];
+          for (let i = 1; i <= n; i++) best[i] = -1e9;
+          for (let i = 0; i < n; i++) {
+            if (best[i] <= -1e9) continue;
+            for (let L = Math.min(MAXK, n - i); L >= 1; L--) {
+              const k = a.slice(i, i + L).join("");
+              let out = null,
+                bonus = 0;
+              if (R[k] !== undefined) {
+                out = R[k];
+                bonus = 0.5;
+              } else if (T[k] !== undefined) {
+                out = k; // 台華同形詞（學校、老師…）照抄
+                bonus = 0.3;
+              } else if (L === 1) out = k;
+              if (out === null) continue;
+              const sc = best[i] + L * L + bonus;
+              if (sc > best[i + L]) {
+                best[i + L] = sc;
+                back[i + L] = [i, out];
+              }
             }
           }
-          for (const i of hit) {
-            v = v.split("㈰" + i + "㈱").join(to[i] + " ");
+          const out = [];
+          let p = n;
+          while (p > 0) {
+            out.unshift(back[p][1]);
+            p = back[p][0];
           }
-          return v;
+          return out.join("");
         }
 
-        // 移除替換時補上的分詞空格（保留英數字之間的空格）
-        function tidy(t) {
-          for (let k = 0; k < 3; k++)
-            t = t.replace(/([^!-㏕,^︰-￥])( +)([^!-㏕,^︰-￥])/g, "$1$3");
-          for (let k = 0; k < 3; k++) t = t.replace(/( +)([^!-㏕,^︰-￥])/g, "$2");
-          for (let k = 0; k < 3; k++) t = t.replace(/([^!-㏕,^︰-￥])( +)/g, "$1");
-          return t.trim();
-        }
-
-        // 台→華 的語法修補（原系統 Xiubu / g2m 的 k2g 規則）
-        function fixK2G(t) {
-          t = t.replace(/(從)([^!?︰-￥]{0,14})([說笑哭打])/g, "對$2$3");
-          t = t.replace(/(和)([^!?︰-￥]{0,14})([說走跑笑哭打])/g, "跟$2$3");
-          t = t.replace(
-            /(個)([^!?︰-￥]{0,14})([鴨鵝雞牛豬狗貓鼠虎兔])/g,
-            "隻$2$3",
-          );
-          for (let k = 0; k < 3; k++)
-            t = t.replace(
-              /([一二三四五六七八九十百千萬億兆零])( )([一二三四五六七八九十百千萬億兆零])/g,
-              "$1$3",
-            );
-          return t;
+        // 台 → 華（詞庫反查底稿）
+        function tai2hua(text) {
+          const src = stripTailo(text);
+          if (!src) return "";
+          const mem = SENT_R.get(norm(src));
+          if (mem) return mem;
+          let out = "",
+            buf = "";
+          for (const ch of Array.from(src)) {
+            if (HAN1.test(ch)) buf += ch;
+            else {
+              if (buf) out += segRun(buf);
+              buf = "";
+              out += ch;
+            }
+          }
+          if (buf) out += segRun(buf);
+          // 句尾小規則：問句尾「無」→「嗎」、「未」→「了沒」，句尾「矣」→「了」
+          // 「阮」接家人／家裡 → 我（阮老爸＝我爸爸），其餘維持「我們」
+          out = out
+            .replace(
+              /我們(?=爸爸|媽媽|父親|母親|爺爺|奶奶|阿公|阿嬤|哥哥|姊姊|弟弟|妹妹|老公|老婆|孩子|家)/g,
+              "我",
+            )
+            .replace(/(?:沒有|沒|無)([？?])/g, "嗎$1")
+            .replace(/未([？?])/g, "了沒$1")
+            .replace(/矣(?=[，。！？,.!?]|$)/g, "了");
+          return out;
         }
 
         return {
+          load,
+          hua2tai,
+          tai2hua,
           get ready() {
             return ready;
-          },
-          build,
-          hua2tai(t) {
-            build();
-            return tidy(convert(t, C, D));
-          },
-          tai2hua(t) {
-            build();
-            return tidy(fixK2G(convert(t, E, F)));
           },
         };
       })();
 
-      // 詞庫解壓＋排序約需 1～3 秒，先讓 toast 畫出來再做，避免畫面像當掉
-      async function ensureG2M2() {
-        if (G2M2.ready) return;
-        showToast("正在載入台語詞庫（約 12 萬筆），首次需要幾秒…");
-        await new Promise((r) => setTimeout(r, 60));
-        G2M2.build();
-      }
-
-      // ================= 意傳「媠聲」台語語音合成 =================
-      // 來源：意傳科技 ithuan.tw「媠聲／鬥拍字」（前端 i3thuan5/TauPhahJi-BangTsam，MIT / g0v）。
-      // GET https://hapsing.ithuan.tw/bangtsam?taibun=<臺羅KIP> → 回傳 mp3（整句自然發音、免金鑰）。
-      // ⚠️ 免費展示服務、資源有限：官方限流「1 IP 1 分鐘最多 3 句」，本檔已內建節流；
-      //    教材或公開場合使用請標示語音來源，正式量產前請洽意傳科技談授權。
-      //    被限流、逾時或失敗時，自動退回教育部辭典逐字接音 holo()。
-      // 註：媠聲必須餵臺羅（餵漢字只會得到不完整的音檔）；漢字→臺羅的官方 API
-      //     (hokbu.ithuan.tw/tau) 沒有 CORS 標頭，瀏覽器不能直接呼叫，
-      //     因此臺羅優先取自翻譯結果括號內的標音，取不到才請 Gemini 轉。
-      const ITHUAN_TTS_URL = "https://hapsing.ithuan.tw/bangtsam";
-      const ITHUAN_MIN_INTERVAL_MS = 21000;
-      let lastIthuanRequestTime = 0;
-      let ithuanAudio = null;
-
-      // 漢字範圍（含中日韓擴充 A／B 與相容區；擴充 B 以高代理範圍判斷）。
-      // 測試用不加 g，計數用才加 g —— 帶 g 的 regex 呼叫 test() 會記住 lastIndex 而誤判。
-      const HAN_TEST = /[\u3400-\u9fff\uf900-\ufaff\ud840-\ud87f]/;
-      const HAN_ALL = /[\u3400-\u9fff\uf900-\ufaff\ud840-\ud87f]/g;
-
-      // 括號內是不是羅馬字標音：要有拉丁字母，且不能夾漢字
-      function isTailoChunk(s) {
-        return /[A-Za-z]/.test(s) && !HAN_TEST.test(s);
-      }
-
-      // 取出翻譯結果裡「所有」括號標音，依序接起來。
-      // ⚠️ 只取最後一組會漏字：Gemini 遇到多句時常一句一組括號，
-      //    逐詞標註時更慘（整句只剩最後一個詞的音）。
-      function extractTailo(text) {
-        const chunks = [];
-        const re = /[（(]([^（）()]+)[）)]/g;
-        let mt;
-        while ((mt = re.exec(String(text))) !== null) {
-          const s = mt[1].trim();
-          if (isTailoChunk(s)) chunks.push(s);
-        }
-        return chunks.join(" ");
-      }
-
-      // 去掉所有羅馬字括號，只留漢字（拿去朗讀或再翻譯時用）
-      function stripTailoParen(text) {
-        return String(text)
-          .replace(/[（(]([^（）()]+)[）)]/g, (all, inner) =>
-            isTailoChunk(inner) ? "" : all,
-          )
-          .replace(/\s{2,}/g, " ")
+      // 去掉台語文字裡的臺羅：括號內的羅馬字、整行沒有漢字的羅馬字行
+      function stripTailo(text) {
+        return (text || "")
+          .split(/\n/)
+          .filter((line) => HAN_TEST.test(line) || !/[A-Za-z]/.test(line))
+          .join("\n")
+          .replace(/[（(][^）)]*[A-Za-z][^）)]*[）)]/g, "")
           .trim();
       }
 
-      // 標音是否涵蓋整段漢字：音節數明顯少於漢字數，代表 Gemini 只標了一部分，
-      // 直接拿去合成就會漏字，要重新整段標音。
-      function tailoCoversText(tailo, hanji) {
-        const hanCount = (String(hanji).match(HAN_ALL) || []).length;
-        if (!hanCount) return true;
-        const syllables = String(tailo)
-          .split(/[\s\u3000]+/)
-          .filter(Boolean)
-          .reduce((n, w) => n + w.split(/-+/).filter(Boolean).length, 0);
-        return syllables >= hanCount * 0.7;
-      }
+      // 漢字範圍（含中日韓擴充 A／B 與相容區；擴充 B 以高代理範圍判斷）
+      const HAN_TEST = /[㐀-鿿豈-﫿\ud840-\ud87f]/;
 
-      async function textToTailoKip(text) {
-        const cleanText = text.replace(/[（(][^）)]*[）)]/g, "");
-        const prompt = `Convert the following Taiwanese Hokkien (Tâi-gí) text into Taiwan's Ministry of Education official Tâi-uân Tâi-gí Lô-má-jī Phing-im Hong-àn (臺羅, Tâi-lô) with TONE DIACRITICS (never digits), NOT Pe̍h-ōe-jī. Use Tâi-lô conventions: 'ts/tsh' (never 'ch/chh'), 'oo' (never 'o͘'), 'ing/ik' (never 'eng/ek'), 'nn' for nasalization (never superscript ⁿ), 'ua/ue' (never 'oa/oe'). Join syllables inside a word with a single hyphen; separate words with spaces; keep sentence-final punctuation. Output ONLY the romanized text, no Chinese characters, no explanation. Example: 咱來去買物件。 -> Lán lâi-khì bé mi̍h-kiānn. Text: "${cleanText}"`;
-        const res = await fetch(
-          `${userBaseUrl}/v1beta/models/${selectedModel || "gemini-1.5-flash"}:generateContent?key=${userApiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-            }),
-          },
+      // 取得要念的臺羅：翻譯結果自帶的臺羅行優先，沒有就用詞庫把漢字轉成臺羅（不需要 API Key）
+      function taigiTailo(text) {
+        const lines = (text || "").split(/\n/).map((s) => s.trim());
+        const tlLines = lines.filter(
+          (l) => l && /[A-Za-z]/.test(l) && !HAN_TEST.test(l),
         );
-        if (!res.ok) throw new Error("臺羅拼音轉換失敗");
-        const data = await res.json();
-        if (!data.candidates) throw new Error("臺羅拼音轉換失敗");
-        return data.candidates[0].content.parts[0].text.trim();
+        if (tlLines.length) return tlLines.join(" ");
+        const han = stripTailo(text);
+        if (!han || !TaigiEngine.ready) return "";
+        return TaigiMT.romanize(han);
       }
 
-      async function getTaigiKip(text) {
-        const hanji = stripTailoParen(text);
-        const inline = extractTailo(text);
-        if (inline && tailoCoversText(inline, hanji)) return inline;
+      // ================= 台語發音：snd-plus（教育部辭典錄音接音） =================
+      // 與「台語翻譯系統」同一套播放法：依標點切段 → 整段音檔先載好 → 無縫接播；
+      // 每個音檔各用一個 <audio>，點擊當下靜音試播解鎖（iOS）。
+      let sndPlusLoading = null;
+      function ensureSndPlus() {
+        if (window.MdSnd) return Promise.resolve();
+        if (!sndPlusLoading)
+          sndPlusLoading = loadScript(SNDPLUS_URL).catch((e) => {
+            sndPlusLoading = null;
+            throw e;
+          });
+        return sndPlusLoading;
+      }
 
-        if (!userApiKey) {
-          if (inline) showToast("標音不完整，發音可能漏字（設定 API Key 可自動補全）");
-          return inline;
+      const sp = { on: false, els: [], seq: [], i: 0, timer: 0, rate: 1.45, el: null };
+      function spMark(on) {
+        if (sp.el) sp.el.classList.toggle("playing", on);
+      }
+      function spStop() {
+        sp.on = false;
+        clearTimeout(sp.timer);
+        sp.els.forEach((a) => {
+          try {
+            a.onplaying = a.onended = a.onerror = null;
+            a.pause();
+          } catch (e) {}
+        });
+        sp.els = [];
+        spMark(false);
+        sp.el = null;
+      }
+      function spBuild(text) {
+        const seq = [],
+          re = /([^，。！？、；：,.!?;:…\n]+)([，。！？、；：,.!?;:…\n]*)/g;
+        let m;
+        while ((m = re.exec(text))) {
+          const urls = MdSnd.resolve(m[1]);
+          urls.forEach((u) => seq.push({ u }));
+          if (urls.length && m[2])
+            seq.push({ p: /[。！？.!?\n]/.test(m[2]) ? 450 : 220 });
         }
+        while (seq.length && seq[seq.length - 1].p) seq.pop();
+        return seq;
+      }
+      function spSetRate(a) {
+        a.playbackRate = sp.rate;
+        a.preservesPitch = a.mozPreservesPitch = a.webkitPreservesPitch = true;
+      }
+      function spNext() {
+        if (!sp.on) return;
+        clearTimeout(sp.timer);
+        const it = sp.seq[sp.i++];
+        if (!it) {
+          spStop();
+          return;
+        }
+        if (it.p) {
+          sp.timer = setTimeout(spNext, it.p / sp.rate);
+          return;
+        }
+        const a = it.a;
+        let done = false;
+        const go = () => {
+          if (done) return;
+          done = true;
+          a.onended = a.onerror = a.onplaying = null;
+          spNext();
+        };
+        a.onended = go;
+        a.onerror = go;
+        a.onplaying = () => {
+          const left = ((a.duration || 0) - a.currentTime) / sp.rate - 0.05;
+          if (left > 0 && isFinite(left)) sp.timer = setTimeout(go, left * 1000);
+        };
+        spSetRate(a);
+        a._live = true;
+        a.muted = false;
         try {
-          const full = await textToTailoKip(hanji || text);
-          if (full && tailoCoversText(full, hanji)) return full;
-          return full || inline;
-        } catch (e) {
-          return inline;
-        }
+          a.currentTime = 0;
+        } catch (e) {}
+        const pr = a.play();
+        if (pr && pr.catch) pr.catch(() => go());
       }
-
-      // 備援：教育部《臺灣台語常用詞辭典》單字音檔接音（snd-gapless.js 的 holo）
-      function playTailoConcat(tailo, el) {
-        holo(el || null, tailo, { skipStart: 0.08, skipEnd: 0.3 });
+      function playTailoSeq(tl, el) {
+        if (sp.on) {
+          const same = sp.el === el;
+          spStop();
+          if (same) return; // 再按一次＝停止
+        }
+        const seq = spBuild(tl);
+        if (!seq.length) {
+          showToast("這段揣無發音");
+          return;
+        }
+        sp.on = true;
+        sp.seq = seq;
+        sp.i = 0;
+        sp.els = [];
+        sp.el = el || null;
+        spMark(true);
+        let total = 0,
+          ready = 0,
+          started = false;
+        const start = () => {
+          if (started || !sp.on) return;
+          started = true;
+          clearTimeout(sp.timer);
+          spNext();
+        };
+        seq.forEach((it) => {
+          if (!it.u) return;
+          const a = new Audio();
+          a.preload = "auto";
+          a.src = it.u;
+          it.a = a;
+          sp.els.push(a);
+          total++;
+          const f = () => {
+            a.removeEventListener("canplaythrough", f);
+            a.removeEventListener("error", f);
+            if (++ready >= total) start();
+          };
+          a.addEventListener("canplaythrough", f);
+          a.addEventListener("error", f);
+          a.muted = true;
+          const pr = a.play();
+          if (pr && pr.then)
+            pr.then(
+              () => {
+                if (!a._live) {
+                  a.pause();
+                  a.currentTime = 0;
+                }
+                a.muted = false;
+              },
+              () => {
+                a.muted = false;
+              },
+            );
+        });
+        sp.timer = setTimeout(start, 8000); // 最多等 8 秒，網路慢就先播
       }
 
       async function speakTaigi(text, el) {
-        const kip = await getTaigiKip(text);
-        if (!kip) {
-          showToast(
-            userApiKey
-              ? "台語標音失敗，無法發音"
-              : "請先設定 API Key 才能取得臺羅標音",
-            "error",
-          );
-          return false;
-        }
-
-        const wait =
-          ITHUAN_MIN_INTERVAL_MS - (Date.now() - lastIthuanRequestTime);
-        if (wait > 0) {
-          showToast(
-            `媠聲冷卻中（還要 ${Math.ceil(wait / 1000)} 秒），改用辭典接音`,
-          );
-          playTailoConcat(kip, el);
-          return true;
-        }
-
         if (synth) synth.cancel();
         try {
-          if (ithuanAudio) ithuanAudio.pause();
-        } catch (e) {}
-
-        lastIthuanRequestTime = Date.now();
-        showToast("正在用意傳媠聲合成台語語音…");
-
-        const audio = new Audio(
-          ITHUAN_TTS_URL + "?taibun=" + encodeURIComponent(kip),
-        );
-        ithuanAudio = audio;
-        let fellBack = false;
-        const fallback = (why) => {
-          if (fellBack) return;
-          fellBack = true;
-          clearTimeout(timer);
-          showToast("媠聲" + why + "，改用教育部辭典接音");
-          playTailoConcat(kip, el);
-        };
-        const timer = setTimeout(() => fallback("逾時"), 15000);
-        audio.oncanplay = () => clearTimeout(timer);
-        audio.onplaying = () => clearTimeout(timer);
-        audio.onerror = () => fallback("連線失敗");
-        try {
-          await audio.play();
+          await TaigiEngine.load();
         } catch (e) {
-          fallback("無法播放");
+          showToast("台語詞庫載入失敗，請檢查網路", "error");
+          return false;
         }
+        const tl = taigiTailo(text);
+        if (!tl) {
+          showToast("這段揣無台語發音", "error");
+          return false;
+        }
+        try {
+          await ensureSndPlus();
+        } catch (e) {
+          showToast("發音程式載入失敗，請檢查網路", "error");
+          return false;
+        }
+        playTailoSeq(tl, el);
         return true;
       }
 
+      // 意傳「媠聲」整句語音：只用在「下載台語 MP3」。
+      // 來源：意傳科技 ithuan.tw（免費展示服務，限流 1 IP 每分鐘 3 句），餵臺羅調符、回傳 MP3。
+      const ITHUAN_TTS_URL = "https://hapsing.ithuan.tw/bangtsam";
+      const ITHUAN_MIN_INTERVAL_MS = 21000;
+      let lastIthuanRequestTime = 0;
       // 依語言代碼分派：臺灣台語走媠聲／接音，其餘語言走瀏覽器內建語音
       async function smartSpeak(text, langCode, el) {
         if (langCode === "nan-TW") {
           await speakTaigi(text, el);
         } else {
+          spStop();
           speakText(text, langCode);
         }
       }
@@ -1673,86 +2170,118 @@
       // ================= 翻譯路由 =================
       const IDX_ZH = 0; // 繁體中文
       const IDX_TAI = 1; // 臺灣台語
+      const POLISH_KEY = "taigi_gemini_polish";
+      const isLocalLang = (i) => Number(i) === IDX_ZH || Number(i) === IDX_TAI;
 
-      // 用 Gemini 潤飾 g2m2 底稿：只准調語序、不准改用字，最後補臺羅
+      // 呼叫 Gemini（金鑰放在標頭 x-goog-api-key，不放網址，避免留在紀錄裡）
+      async function geminiGenerate(prompt, model) {
+        const res = await fetch(
+          `${userBaseUrl}/v1beta/models/${model || selectedModel || DEFAULT_MODEL}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": userApiKey,
+            },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.candidates) {
+          const err = new Error(
+            (data.error && data.error.message) || "HTTP " + res.status,
+          );
+          err.status = res.status;
+          throw err;
+        }
+        return data.candidates[0].content.parts
+          .map((p) => p.text || "")
+          .join("")
+          .replace(/<think>[\s\S]*?<\/think>/gi, "")
+          .trim();
+      }
+
+      // （選用）Gemini 潤飾台語語序：只准調語序、補虛詞，不准改用字
       async function polishTaigi(sourceZh, draft) {
-        const prompt = `You are a Taiwanese Hokkien (Tâi-gí) editor. Below is a Mandarin sentence and a DRAFT Taiwanese translation produced by a dictionary that replaces words one by one without fixing word order.
+        const prompt = `You are a Taiwanese Hokkien (Tâi-gí) editor. Below is a Mandarin sentence and a DRAFT Taiwanese translation produced by a dictionary based on Taiwan's Ministry of Education Tâi-gí dictionary.
 
 Mandarin: "${sourceZh}"
 Draft Taiwanese: "${draft}"
 
-Your job:
-1. Keep EVERY Chinese character choice from the draft. The draft uses Taiwan Ministry of Education recommended characters (教育部推薦用字) and is authoritative on wording. Do NOT swap them back to Mandarin words or to other variants.
-2. Only fix word order, add missing function words/particles, and repair fragments so the sentence reads as natural spoken Tâi-gí. Add a character only when the draft is clearly missing one.
-3. Then append the romanization of the WHOLE text in ONE single pair of parentheses at the VERY END of your output. Even if the text has several sentences, use exactly ONE pair of parentheses covering all of them. Do NOT annotate word by word, do NOT put one pair per sentence, do NOT put parentheses anywhere else, and do NOT write anything after the closing parenthesis. It MUST follow Taiwan's Ministry of Education official Tâi-uân Tâi-gí Lô-má-jī Phing-im Hong-àn (臺羅, Tâi-lô), NOT Pe̍h-ōe-jī: write 'ts/tsh' (never 'ch/chh'), 'oo' (never 'o͘'), 'ing/ik' (never 'eng/ek'), 'nn' for nasalization (never superscript ⁿ), 'ua/ue' (never 'oa/oe'), and use tone diacritics (never digits).
-
-Output ONLY this format, nothing else: 漢字整句。(Tâi-lô tsn̂g-kù.)
-Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
+Rules:
+1. Keep EVERY Chinese character choice from the draft (教育部推薦用字). Do NOT swap them back to Mandarin words or other variants.
+2. Only fix word order, add missing function words/particles, and repair fragments so it reads as natural spoken Tâi-gí.
+3. Output ONLY the Taiwanese Han-character sentence. No romanization, no parentheses, no explanation.`;
         try {
-          const res = await fetch(
-            `${userBaseUrl}/v1beta/models/${selectedModel || "gemini-1.5-flash"}:generateContent?key=${userApiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-              }),
-            },
-          );
-          if (!res.ok) return draft;
-          const data = await res.json();
-          if (!data.candidates) return draft;
-          const out = data.candidates[0].content.parts[0].text
-            .replace(/<think>[\s\S]*?<\/think>/gi, "")
-            .trim();
-          return out || draft;
+          const out = await geminiGenerate(prompt);
+          return stripTailo(out.split(/\n/)[0]) || draft;
         } catch (e) {
           return draft;
         }
       }
 
-      // 台語一律走 g2m2 詞庫；其他語言維持原本的 Gemini 直譯
+      // Gemini 把「詞庫反查底稿」潤成通順華語
+      async function polishHua(taigi, draft) {
+        const prompt = `Translate the following Taiwanese Hokkien (Tâi-gí, written in Taiwan Ministry of Education Han characters) into natural Traditional Chinese as used in Taiwan.
+A dictionary-based word-by-word draft is given as a hint; fix its wording and word order where needed.
+
+Taiwanese: "${taigi}"
+Draft Mandarin: "${draft}"
+
+Output ONLY the Traditional Chinese translation, nothing else.`;
+        try {
+          return (await geminiGenerate(prompt)) || draft;
+        } catch (e) {
+          return draft;
+        }
+      }
+
+      function needKeyMsg() {
+        showToast("華語、台語以外的語言要設定 Gemini API Key 才會當翻譯", "error");
+        return "[系統訊息] 這个語言需要設定 API Key（右上角「設定」）";
+      }
+
+      // 台語結果一律輸出「台語漢字＼n臺羅」兩行
       async function translateSmart(text, sIdx, tIdx) {
         const s = Number(sIdx),
           t = Number(tIdx);
+        if (s === t) return text;
+        if ((!isLocalLang(s) || !isLocalLang(t)) && !userApiKey)
+          return needKeyMsg();
 
         if (t === IDX_TAI) {
           let zh = text;
           if (s !== IDX_ZH) {
-            zh = await callGeminiAPI(
-              text,
-              languages[s].prompt,
-              languages[IDX_ZH].prompt,
-            );
-            if (typeof zh === "string" && zh.startsWith("[系統訊息]")) return zh;
+            zh = await callGeminiAPI(text, languages[s].prompt, languages[IDX_ZH].prompt);
+            if (zh.startsWith("[系統訊息]")) return zh;
           }
-          await ensureG2M2();
-          const draft = G2M2.hua2tai(zh);
-          if (!userApiKey) {
-            showToast("未設定 API Key，使用離線詞庫翻譯（無臺羅標音）");
-            return draft;
+          await TaigiEngine.load();
+          let { han, tl } = TaigiEngine.hua2tai(zh);
+          if (userApiKey && storageGet(POLISH_KEY) === "1") {
+            const polished = await polishTaigi(zh, han);
+            if (polished && polished !== han) {
+              han = polished;
+              tl = TaigiMT.romanize(han);
+            }
           }
-          return await polishTaigi(zh, draft);
+          return han + "\n" + tl;
         }
 
         if (s === IDX_TAI) {
-          await ensureG2M2();
-          const zh = G2M2.tai2hua(stripTailoParen(text) || text);
+          await TaigiEngine.load();
+          const src = stripTailo(text);
+          if (!src) {
+            showToast("請輸入台語漢字（羅馬字毋免輸入）", "error");
+            return "";
+          }
+          let zh = TaigiEngine.tai2hua(src);
+          if (userApiKey) zh = await polishHua(src, zh);
           if (t === IDX_ZH) return zh;
-          return await callGeminiAPI(
-            zh,
-            languages[IDX_ZH].prompt,
-            languages[t].prompt,
-          );
+          return await callGeminiAPI(zh, languages[IDX_ZH].prompt, languages[t].prompt);
         }
 
-        return await callGeminiAPI(
-          text,
-          languages[s].prompt,
-          languages[t].prompt,
-        );
+        return await callGeminiAPI(text, languages[s].prompt, languages[t].prompt);
       }
-
       const languages = [
         {
           name: "繁體中文",
@@ -1845,18 +2374,47 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         setTimeout(() => (m.style.display = "none"), 300);
       }
 
+      const DEFAULT_MODEL = "gemini-2.5-flash";
+      // 只留「能翻譯文字」的模型：排除語音合成、生圖、嵌入、即時音訊等
+      const NON_TEXT_MODEL =
+        /tts|image|imagen|embedding|aqa|veo|live|audio|customtools|learnlm|robotics|computer-use|native|thinking-exp/i;
+
       function initApiKey() {
         const k = storageGet("gemini_api_key");
         const u =
           storageGet("gemini_base_url") ||
           "https://generativelanguage.googleapis.com";
+        userBaseUrl = u;
+        // v67：沒有 Key 也能用華台互翻，所以不再一開頁就跳設定視窗
         if (k) {
           userApiKey = k;
-          userBaseUrl = u;
-          setTimeout(() => fetchAndAutoSelectModel(), 1000);
-        } else {
-          setTimeout(() => openSettings(), 500);
+          setTimeout(() => fetchAndAutoSelectModel(), 600);
         }
+        refreshKeyUi();
+      }
+
+      // 依有沒有 Key 更新：模型列、語言選單標示、設定視窗勾選
+      function refreshKeyUi() {
+        const has = !!userApiKey;
+        document.getElementById("model-selector-container").style.display =
+          has ? "flex" : "none";
+        document.getElementById("noKeyNote").style.display = has ? "none" : "block";
+        ["textSourceLang", "textTargetLang", "voiceTopLang", "voiceBottomLang"].forEach(
+          (id) => {
+            const el = document.getElementById(id);
+            Array.from(el.options).forEach((o) => {
+              const i = Number(o.value);
+              o.textContent =
+                languages[i].name + (has || isLocalLang(i) ? "" : "（需 Key）");
+            });
+          },
+        );
+        document.getElementById("polishToggle").checked =
+          storageGet(POLISH_KEY) === "1";
+      }
+      function togglePolish(el) {
+        if (el.checked) storageSet(POLISH_KEY, "1");
+        else storageRemove(POLISH_KEY);
       }
       function openSettings() {
         document.getElementById("apiKeyInput").value = userApiKey;
@@ -1877,6 +2435,7 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
           }
           closeModal("settingsModal");
           showToast("設定已儲存");
+          refreshKeyUi();
           fetchAndAutoSelectModel();
         } else {
           showToast("請輸入 Key", "error");
@@ -1886,9 +2445,10 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         storageRemove("gemini_api_key");
         storageRemove("gemini_base_url");
         userApiKey = "";
+        userBaseUrl = "https://generativelanguage.googleapis.com";
         closeModal("settingsModal");
-        showToast("Key 已清除");
-        setTimeout(() => openSettings(), 1000);
+        refreshKeyUi();
+        showToast("Key 已清除（華台互翻照常可用）");
       }
 
       async function fetchAndAutoSelectModel() {
@@ -1897,9 +2457,9 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         select.innerHTML = "<option>偵測中...</option>";
         select.disabled = true;
         try {
-          const res = await fetch(
-            `${userBaseUrl}/v1beta/models?key=${userApiKey}`,
-          );
+          const res = await fetch(`${userBaseUrl}/v1beta/models?pageSize=200`, {
+            headers: { "x-goog-api-key": userApiKey },
+          });
           const data = await res.json();
           if (!res.ok || !data.models) {
             select.innerHTML = '<option value="">(Key 無效)</option>';
@@ -1907,43 +2467,39 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
           }
           const availableModels = data.models
             .filter((m) =>
-              m.supportedGenerationMethods.includes("generateContent"),
+              (m.supportedGenerationMethods || []).includes("generateContent"),
             )
-            .map((m) => m.name.replace("models/", ""));
+            .map((m) => m.name.replace("models/", ""))
+            .filter((n) => /^(gemini|gemma)/.test(n) && !NON_TEXT_MODEL.test(n));
           if (availableModels.length === 0) {
             select.innerHTML = '<option value="">(無可用模型)</option>';
             return;
           }
+          // 排序：預設模型 → 其他 flash → 其他
+          const rank = (n) =>
+            n === DEFAULT_MODEL ? 0 : /flash/.test(n) && !/lite/.test(n) ? 1 : /flash/.test(n) ? 2 : 3;
+          availableModels.sort((a, b) => rank(a) - rank(b));
           select.innerHTML = "";
-          availableModels.sort((a, b) => {
-            if (a.includes("1.5-flash") && !b.includes("1.5-flash")) return -1;
-            if (!a.includes("1.5-flash") && b.includes("1.5-flash")) return 1;
-            return 0;
-          });
-          availableModels.forEach((model) => {
-            const opt = document.createElement("option");
-            opt.value = model;
-            opt.innerText = model;
-            select.appendChild(opt);
-          });
+          availableModels.forEach((model) => select.add(new Option(model, model)));
           select.disabled = false;
-          selectedModel = availableModels[0];
+          const saved = storageGet("gemini_model");
+          selectedModel = availableModels.includes(saved) ? saved : availableModels[0];
           select.value = selectedModel;
-          showToast(`已選擇: ${selectedModel}`);
         } catch (e) {
-          select.innerHTML =
-            '<option value="gemini-1.5-flash">預設(1.5 Flash)</option>';
-          selectedModel = "gemini-1.5-flash";
+          select.innerHTML = `<option value="${DEFAULT_MODEL}">${DEFAULT_MODEL}</option>`;
+          select.disabled = false;
+          selectedModel = DEFAULT_MODEL;
         }
       }
       function manualSelectModel() {
         selectedModel = document.getElementById("current-model-select").value;
+        storageSet("gemini_model", selectedModel);
         showToast(`已切換: ${selectedModel}`);
       }
 
       window.onload = () => {
-        initApiKey();
         initLanguageSelects();
+        initApiKey();
         applyInputLangs();
         applyImeSwitchHint();
         checkSpeechSupport();
@@ -1953,12 +2509,11 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         initDraggableMic("bottomMicBtn", "bottom");
         initSplitter();
         setupTextPlayback();
-        // 背景暖機：先把 12.7 萬筆詞庫解壓排序好，第一次翻譯就不用等
-        setTimeout(() => {
-          try {
-            G2M2.build();
-          } catch (e) {}
-        }, 1200);
+        // 背景載入台語翻譯系統詞庫（約 0.9 MB）；載好前翻譯鈕顯示「詞庫載入中…」
+        updateTranslateBtn();
+        TaigiEngine.load().catch(() =>
+          showToast("台語詞庫載入失敗，請檢查網路後重新整理", "error"),
+        );
 
         attachImeSafeEnter(document.getElementById("textInput"), () =>
           doTextTranslation(),
@@ -2235,8 +2790,9 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
           .getElementById("textSourceLang")
           .addEventListener("change", applyInputLangs);
         document.getElementById("textSourceLang").selectedIndex = 0;
-        document.getElementById("textTargetLang").selectedIndex = 2;
-        document.getElementById("voiceTopLang").selectedIndex = 2;
+        // v67：預設 華語→台語（不需要 Key 就能直接用）
+        document.getElementById("textTargetLang").selectedIndex = 1;
+        document.getElementById("voiceTopLang").selectedIndex = 1;
         document.getElementById("voiceBottomLang").selectedIndex = 0;
       }
       function syncLanguages(source) {
@@ -2499,121 +3055,93 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
       }
 
       async function callGeminiAPI(text, sP, tP) {
-        if (!userApiKey) {
-          showToast("請設定 Key", "error");
-          openSettings();
-          throw new Error("No Key");
-        }
-        const fallbackModels = [
-          "gemini-1.5-flash",
-          "gemini-1.5-flash-8b",
-          "gemini-1.0-pro",
-        ];
-        let attemptList = [selectedModel || "gemini-1.5-flash"];
-        fallbackModels.forEach((m) => {
-          if (!attemptList.includes(m)) attemptList.push(m);
-        });
+        if (!userApiKey) return needKeyMsg();
+        const attemptList = [selectedModel || DEFAULT_MODEL];
+        ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"].forEach(
+          (m) => {
+            if (!attemptList.includes(m)) attemptList.push(m);
+          },
+        );
         const prompt = `You are a professional translator. Translate the following text from ${sP} to ${tP}. Output *only* the translated result. Do not include any thinking process, explanations, or notes. Text: "${text}"`;
         let lastError = null;
         for (const model of attemptList) {
           try {
-            const res = await fetch(
-              `${userBaseUrl}/v1beta/models/${model}:generateContent?key=${userApiKey}`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{ parts: [{ text: prompt }] }],
-                }),
-              },
-            );
-            if (res.ok) {
-              const data = await res.json();
-              if (data.candidates) {
-                let resultText =
-                  data.candidates[0].content.parts[0].text.trim();
-                resultText = resultText
-                  .replace(/<think>[\s\S]*?<\/think>/gi, "")
-                  .trim();
-                return resultText;
-              }
-            }
-            const err = await res.json();
-            lastError = err.error ? err.error.message : "Unknown Error";
-            if (
-              res.status === 429 ||
-              res.status === 404 ||
-              lastError.includes("limit: 0")
-            )
-              continue;
-            else break;
+            return await geminiGenerate(prompt, model);
           } catch (e) {
             lastError = e.message;
+            // 額度用完、模型不存在 → 換下一個模型；其他錯誤（Key 無效等）直接停
+            if (!(e.status === 429 || e.status === 404 || /limit: 0/.test(lastError)))
+              break;
           }
         }
-        showToast("翻譯失敗: 額度不足或無可用模型", "error");
+        showToast("翻譯失敗：額度不足或無可用模型", "error");
         return `[系統訊息] ${lastError}`;
       }
 
-      async function detectLanguage(text) {
+      // 自動偵測語言（要 Key）。華語／台語都寫漢字，Gemini 分不清，
+      // 所以「選台語或華語、又輸入漢字」時不偵測，免得把台語來源誤改成華語。
+      async function detectLanguage(text, curIdx) {
+        if (!userApiKey) return null;
+        if (isLocalLang(curIdx) && HAN_TEST.test(text)) return null;
         const langNames = languages.map((l) => l.prompt).join(", ");
         const prompt = `Identify the language of the following text. Choose ONLY ONE from this list: [${langNames}]. Output only the language name. Text: "${text}"`;
         try {
-          const res = await fetch(
-            `${userBaseUrl}/v1beta/models/${selectedModel || "gemini-1.5-flash"}:generateContent?key=${userApiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-              }),
-            },
+          const detected = await geminiGenerate(prompt);
+          const index = languages.findIndex((l) =>
+            detected.toLowerCase().includes(l.prompt.toLowerCase()),
           );
-          if (res.ok) {
-            const data = await res.json();
-            const detected = data.candidates[0].content.parts[0].text.trim();
-            const index = languages.findIndex((l) =>
-              detected.toLowerCase().includes(l.prompt.toLowerCase()),
-            );
-            return index !== -1 ? index : null;
-          }
+          return index !== -1 ? index : null;
         } catch (e) {
-          console.error("Detection error:", e);
+          return null;
         }
-        return null;
+      }
+
+      // 翻譯鈕狀態：台語詞庫還沒載好時，華台互翻要先等
+      let isTranslating = false;
+      function updateTranslateBtn() {
+        const b = document.getElementById("textTranslateBtn");
+        if (!b) return;
+        b.disabled = isTranslating;
+        b.innerHTML = isTranslating
+          ? '<i class="fas fa-spinner fa-spin"></i> 翻譯中…'
+          : TaigiEngine.ready
+            ? '<i class="fas fa-language"></i> 開始翻譯'
+            : '<i class="fas fa-spinner fa-spin"></i> 台語詞庫載入中…（可先輸入）';
       }
 
       async function doTextTranslation() {
         const i = document.getElementById("textInput"),
-          o = document.getElementById("textOutput"),
-          b = document.getElementById("textTranslateBtn"),
-          l = document.getElementById("textLoading");
+          o = document.getElementById("textOutput");
         const sourceSelect = document.getElementById("textSourceLang");
         const targetSelect = document.getElementById("textTargetLang");
 
-        if (!i.value.trim()) return;
-        b.disabled = true;
-        l.style.display = "block";
+        if (!i.value.trim() || isTranslating) return;
+        isTranslating = true;
+        updateTranslateBtn();
         o.value = "";
+        spStop();
 
         try {
-          const detectedIdx = await detectLanguage(i.value);
+          const detectedIdx = await detectLanguage(i.value, sourceSelect.value);
           if (detectedIdx !== null && detectedIdx != sourceSelect.value) {
             sourceSelect.value = detectedIdx;
+            applyInputLangs();
             showToast(`偵測到語言: ${languages[detectedIdx].name}`);
             if (sourceSelect.value == targetSelect.value) {
               targetSelect.value = detectedIdx == 0 ? 1 : 0;
             }
           }
-
-          const s = sourceSelect.value,
-            t = targetSelect.value;
-          o.value = await translateSmart(i.value, s, t);
+          o.value = await translateSmart(
+            i.value.trim(),
+            sourceSelect.value,
+            targetSelect.value,
+          );
         } catch (e) {
-          o.value = "Error";
+          console.error(e);
+          o.value = "[系統訊息] 翻譯失敗：" + (e.message || e);
         } finally {
-          b.disabled = false;
-          l.style.display = "none";
+          isTranslating = false;
+          updateTranslateBtn();
         }
       }
 
@@ -2621,17 +3149,20 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         const s = document.getElementById("textSourceLang"),
           t = document.getElementById("textTargetLang");
         [s.value, t.value] = [t.value, s.value];
+        applyInputLangs();
         const i = document.getElementById("textInput"),
           o = document.getElementById("textOutput");
-        if (o.value) {
-          i.value = o.value;
+        if (o.value && !o.value.startsWith("[系統訊息]")) {
+          // 台語結果有「漢字＋臺羅」兩行，換過去當原文時只留漢字
+          i.value = Number(s.value) === IDX_TAI ? stripTailo(o.value) : o.value;
           o.value = "";
         }
       }
       function playTextTranslation(btn) {
         const text = document.getElementById("textOutput").value;
         const targetLangIdx = document.getElementById("textTargetLang").value;
-        if (text) smartSpeak(text, languages[targetLangIdx].speechCode, btn);
+        if (text && !text.startsWith("[系統訊息]"))
+          smartSpeak(text, languages[targetLangIdx].speechCode, btn);
         else showToast("沒有可播放的文字");
       }
 
@@ -2639,51 +3170,42 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
         const text = document.getElementById("textOutput").value;
         const targetLangIdx = document.getElementById("textTargetLang").value;
         let langCode = languages[targetLangIdx].speechCode;
-        if (!text) {
+        if (!text || text.startsWith("[系統訊息]")) {
           showToast("沒有內容可下載");
           return;
         }
-        if (text.length > 200) {
-          showToast("文字過長，無法下載 (限200字)", "error");
+        if (text.length > 300) {
+          showToast("文字過長，無法下載 (限300字)", "error");
           return;
         }
+        let url,
+          name = "translation.mp3";
         if (langCode === "nan-TW") {
-          const kip = await getTaigiKip(text);
+          const kip = taigiTailo(text);
           if (!kip) {
-            showToast(
-              userApiKey
-                ? "台語標音失敗，無法下載"
-                : "請先設定 API Key 才能取得臺羅標音",
-              "error",
-            );
+            showToast("這段揣無台語發音，無法下載", "error");
             return;
           }
           const waitMs =
             ITHUAN_MIN_INTERVAL_MS - (Date.now() - lastIthuanRequestTime);
           if (waitMs > 0) {
             showToast(
-              `媠聲冷卻中，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
+              `意傳語音一分鐘上濟 3 句，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
               "error",
             );
             return;
           }
           lastIthuanRequestTime = Date.now();
-          showToast("正在合成台語語音…");
-          const a = document.createElement("a");
-          a.href = ITHUAN_TTS_URL + "?taibun=" + encodeURIComponent(kip);
-          a.download = "translation_taigi.mp3";
-          a.target = "_blank";
-          a.rel = "noreferrer";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          return;
+          showToast("正在用意傳媠聲合成台語語音（免費展示服務）…");
+          url = ITHUAN_TTS_URL + "?taibun=" + encodeURIComponent(kip.replace(/\s+/g, " "));
+          name = "translation_taigi.mp3";
+        } else {
+          if (langCode !== "zh-TW") langCode = langCode.split("-")[0];
+          url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
         }
-        if (langCode !== "zh-TW") langCode = langCode.split("-")[0];
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
         const a = document.createElement("a");
         a.href = url;
-        a.download = "translation.mp3";
+        a.download = name;
         a.target = "_blank";
         a.rel = "noreferrer";
         document.body.appendChild(a);
@@ -2760,9 +3282,15 @@ Example: 咱來去買物件。(Lán lâi-khì bé mi̍h-kiānn.)`;
           out = "topTranslatedText";
           speechLang = languages[topIdx].speechCode;
         }
-        const r = await translateSmart(text, sIdx, tIdx);
-        document.getElementById(out).innerText = r;
-        if (!r.startsWith("[")) smartSpeak(r, speechLang, document.getElementById(out));
+        let r = "";
+        try {
+          r = (await translateSmart(text, sIdx, tIdx)) || "";
+        } catch (e) {
+          r = "[系統訊息] 翻譯失敗：" + (e.message || e);
+        }
+        document.getElementById(out).innerText = r || "...";
+        if (r && !r.startsWith("["))
+          smartSpeak(r, speechLang, document.getElementById(out));
       }
 
       function speakText(t, l) {
