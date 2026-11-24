@@ -1,0 +1,3315 @@
+<!doctype html>
+<!--
+  【著作權聲明】
+  AI 智能翻譯機 (V68) — 台語教學網頁
+  Copyright © 2026 詹宗龍（臺中明道中學）. All rights reserved.
+  作者：詹宗龍｜宗龍的台語課 https://sites.google.com/ms.mingdao.edu.tw/tsiam
+  【引用來源】
+  華台翻譯引擎與詞庫：引用本人自製「台語翻譯系統」（https://cyril-mingdao.github.io/taigi-translate/ 的 taigi-mt.js、dict.js），
+    辭典資料取自中華民國教育部《臺灣台語常用詞辭典》（https://sutian.moe.edu.tw/，CC BY-NC-ND 2.5 TW），著作權屬教育部。
+  台語發音：引用本人自製 snd-plus.js（https://cyril-mingdao.github.io/taigi-class-games/assets/snd-plus.js），
+    錄音取自教育部《臺灣台語常用詞辭典》。
+  台語整句語音下載：意傳科技「媠聲」免費展示服務（https://ithuan.tw/，限流每分鐘 3 句），著作權屬原權利人。
+  其他語言翻譯：Google Gemini API（使用者自備 API Key）；其他語言朗讀使用瀏覽器內建語音。
+  字型：豆腐烏 Tauhu Oo（https://tauhu.tw/，SIL Open Font License 1.1）；Charis SIL（SIL Open Font License 1.1）。
+  圖示使用 Font Awesome Free（Fonticons, Inc.，CC BY 4.0／SIL OFL 1.1／MIT）。
+  本網頁之程式碼、版面與教案設計著作權屬詹宗龍所有，僅供非營利之教育教學使用；前述引用之他人作品，著作權仍屬各原權利人。
+  未經著作權人書面授權，不得重製、改作、散布或修改本網頁之全部或一部分。
+-->
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="author" content="詹宗龍（臺中明道中學）">
+    <meta name="copyright" content="© 2026 詹宗龍（臺中明道中學）。保留一切權利。">
+    <meta name="description" content="AI 智能翻譯機：華語、台語互翻免 API Key（台語漢字＋臺羅、可聽發音），其他語言用 Gemini 翻譯，另有面對面語音翻譯模式。">
+    <!-- v67：拿掉 user-scalable=no／maximum-scale=1，讓視力不好的學生可以放大 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111111" />
+    <title>AI 智能翻譯機</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111'/%3E%3Ctext x='32' y='45' font-size='36' text-anchor='middle' fill='%23FFD400' font-family='sans-serif' font-weight='700'%3E譯%3C/text%3E%3C/svg%3E"
+    />
+    <!-- Font Awesome 只載 CSS 版（v66 同時載 CSS 與 JS 兩份，重複） -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <!-- 漢字字型：沿用台語翻譯系統的豆腐烏分包（只下載畫面用到的字）；臺羅字型：Charis SIL 臺羅用字子集 -->
+    <link rel="stylesheet" href="https://cyril-mingdao.github.io/taigi-translate/fonts/tauhu.css" />
+    <link rel="preload" href="https://cyril-mingdao.github.io/taigi-translate/dict.js" as="script" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Charis+SIL:wght@400;700&amp;display=swap&amp;text=%20%21%27%28%29%2C-./0123456789%3A%3B%3FABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz%C3%80%C3%81%C3%82%C3%8A%C3%8C%C3%8D%C3%8E%C3%92%C3%93%C3%94%C3%9A%C3%9B%C3%A0%C3%A1%C3%A2%C3%A8%C3%A9%C3%AA%C3%AC%C3%AD%C3%AE%C3%B2%C3%B3%C3%B4%C3%B9%C3%BA%C3%BB%C4%80%C4%81%C4%92%C4%93%C4%9B%C4%AA%C4%AB%C5%84%C5%88%C5%8C%C5%8D%C5%91%C5%AA%C5%AB%C5%B1%C7%8E%C7%90%C7%92%C7%94%C7%B8%C7%B9%CC%80%CC%81%CC%82%CC%84%CC%8B%CC%8C%CC%8D%CD%98%E1%B8%BF%E2%80%93%E2%80%95%E2%80%98%E2%80%99%E2%80%9C%E2%80%9D%E2%80%A6%E2%94%80" media="print" onload="this.media='all'" />
+    <style>
+      /* ================= 全域設定 ================= */
+      :root {
+        --primary-color: #4285f4;
+        --secondary-color: #34a853;
+        --danger-color: #d93025;
+        --bg-color: #f0f2f5;
+        --card-bg: #ffffff;
+        --text-color: #333;
+        --mirrored-bg-top: #e8f0fe;
+        --mirrored-bg-bottom: #e6f4ea;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        /* 只加在 body，不要用 * 通配，否則會蓋掉 Font Awesome 圖示的 font-family */
+        font-family:
+          "台灣黑體", "台灣楷體", tauhu-oo, "Roboto", Helvetica, Arial, sans-serif;
+        background-color: var(--bg-color);
+        margin: 0;
+        color: var(--text-color);
+        height: 100vh;
+        /* 手機瀏覽器的網址列會讓 100vh 大於實際可視高度，dvh 才量得準 */
+        height: 100dvh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      /* ================= 頭部控制按鈕 ================= */
+      .header-controls {
+        position: fixed;
+        z-index: 2000;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 5px;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        gap: 8px;
+        backdrop-filter: blur(5px);
+        transition: all 0.1s ease;
+      }
+      .ctrl-btn {
+        background: none;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 15px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #555;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .ctrl-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+      }
+
+      @media (max-width: 480px) {
+        body:not(.voice-mode-portrait) .header-controls {
+          top: 15px;
+          left: 50%;
+          right: auto;
+          transform: translateX(-50%);
+          white-space: nowrap;
+        }
+      }
+      @media (min-width: 481px) {
+        .header-controls {
+          top: 15px;
+          right: 15px;
+        }
+      }
+
+      body.voice-mode-portrait .header-controls {
+        top: calc(50% + 20px);
+        right: 10px;
+        left: auto;
+        transform: none;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        gap: 8px;
+      }
+      body.voice-mode-portrait .ctrl-btn span {
+        display: none;
+      }
+      body.voice-mode-portrait .ctrl-btn {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+      }
+      body.voice-mode-portrait .ctrl-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        box-shadow: 0 2px 8px rgba(66, 133, 244, 0.4);
+      }
+
+      /* ================= 彈窗與提示 ================= */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        display: none;
+        justify-content: center;
+        /* 同上：置中交給 .custom-window 的 margin:auto，這層負責捲動，
+           否則彈窗比畫面高時會上下被切掉又捲不到。 */
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 16px 0;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      .modal-overlay.show {
+        opacity: 1;
+      }
+      .custom-window {
+        background: white;
+        padding: 25px;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 400px;
+        margin: auto;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+      }
+      .modal-overlay.show .custom-window {
+        transform: translateY(0);
+      }
+      .custom-window h3 {
+        margin-top: 0;
+        color: var(--primary-color);
+        font-size: 1.3rem;
+      }
+      .input-group {
+        position: relative;
+        margin: 20px 0;
+      }
+      /* :not(checkbox)：不然「不再顯示」的勾選框會被撐成整列寬，版面歪掉 */
+      .custom-window input:not([type="checkbox"]) {
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #eee;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: border 0.3s;
+        outline: none;
+        background: #fafafa;
+        -webkit-user-select: auto;
+        user-select: auto;
+      }
+      .custom-window input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        margin: 0;
+      }
+      .btn-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+      }
+      .btn-primary,
+      .btn-secondary,
+      .btn-danger,
+      .btn-warning {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: bold;
+        flex: 1;
+      }
+      .btn-primary {
+        background: var(--primary-color);
+        color: white;
+      }
+      .btn-secondary {
+        background: #eee;
+        color: #555;
+      }
+      .btn-danger {
+        background: var(--danger-color);
+        color: white;
+      }
+      .btn-warning {
+        background: #fbbc04;
+        color: #333;
+      }
+      #toast-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 4000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+        width: 90%;
+        align-items: center;
+      }
+      .toast {
+        background: rgba(40, 40, 40, 0.95);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        text-align: center;
+        word-break: break-word;
+        pointer-events: auto;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .toast.error {
+        background: #d93025;
+      }
+
+      /* ================= 文字模式介面 ================= */
+      #textModeContainer {
+        display: flex;
+        flex-direction: column;
+        /* 不能用 justify-content:center：內容一超高，頂端會被裁掉而且捲不回去。
+           改用 flex-start ＋ .text-card 的 margin:auto，一樣置中但不會裁掉開頭。 */
+        justify-content: flex-start;
+        align-items: center;
+        height: 100%;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      /* 修改部分：使工作方框自動縮放並左右滿版 */
+      .text-card {
+        background-color: var(--card-bg);
+        width: 100%;
+        max-width: 1200px; /* 大螢幕下的最大寬度限制 */
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        /* auto 邊界：有多餘空間時置中，空間不足時退為 0，不會裁掉上緣 */
+        margin: auto;
+      }
+
+      h2.app-title {
+        text-align: center;
+        color: var(--primary-color);
+        margin-bottom: 5px;
+        font-size: 1.5rem;
+      }
+      .app-subtitle {
+        text-align: center;
+        color: #000;
+        margin-bottom: 20px;
+        font-size: 0.75rem;
+        font-weight: normal;
+      }
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        gap: 10px;
+      }
+
+      select {
+        flex: 1;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        font-size: 16px;
+        background: #fff;
+        appearance: none;
+        cursor: pointer;
+        width: 0;
+        min-width: 0;
+        text-overflow: ellipsis;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .swap-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 20px;
+        color: var(--primary-color);
+        padding: 10px;
+        border-radius: 50%;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .swap-btn:hover {
+        background: #e8f0fe;
+      }
+
+      .input-wrapper {
+        position: relative;
+        width: 100%;
+        margin-bottom: 8px;
+      }
+      .input-btn-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-bottom: 15px;
+      }
+      textarea {
+        width: 100%;
+        height: 120px;
+        padding: 15px;
+        padding-right: 45px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        font-size: 18px;
+        resize: none;
+        font-family: inherit;
+        transition: border 0.3s;
+        -webkit-user-select: auto;
+        user-select: auto;
+      }
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+
+      .clear-btn {
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+      }
+      .clear-btn:hover {
+        background: #feebeb;
+        color: var(--danger-color);
+        transform: scale(1.1);
+      }
+
+      .mic-input-btn {
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+      }
+      .mic-input-btn:hover {
+        background: #e8f0fe;
+        color: var(--primary-color);
+        transform: scale(1.1);
+      }
+      .mic-input-btn.listening {
+        background: var(--danger-color);
+        color: #fff;
+        animation: pulse-scale 1.5s infinite;
+      }
+      @keyframes pulse-scale {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.15);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .copy-input-btn,
+      .paste-input-btn {
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        transition: all 0.2s;
+      }
+      .copy-input-btn:hover,
+      .paste-input-btn:hover {
+        background: #e8f0fe;
+        color: var(--primary-color);
+        transform: scale(1.1);
+      }
+
+      .output-btn-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 8px;
+        margin-bottom: 15px;
+      }
+      .copy-output-btn {
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        transition: all 0.2s;
+      }
+      .copy-output-btn:hover {
+        background: #e8f0fe;
+        color: var(--primary-color);
+        transform: scale(1.1);
+      }
+
+      .output-box {
+        background-color: #f8f9fa;
+        color: #444;
+        border: 1px solid #eee;
+      }
+      button.translate-btn {
+        width: 100%;
+        padding: 15px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+        box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3);
+      }
+      button.translate-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      .loading-text {
+        display: none;
+        text-align: center;
+        margin-top: 15px;
+        color: #666;
+        font-size: 14px;
+      }
+      #model-selector-container {
+        gap: 8px;
+        min-width: 0;
+        margin-bottom: 10px;
+        padding: 10px;
+        background: #eef2f8;
+        border-radius: 10px;
+        border: 1px dashed #ccc;
+        font-size: 14px;
+        color: #555;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      #current-model-select {
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 13px;
+        /* 模型名稱可能很長：允許縮到 0 再以 ellipsis 截斷，不要把卡片撐破 */
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 200px;
+        text-overflow: ellipsis;
+      }
+      #model-selector-container > span {
+        flex: 0 0 auto;
+      }
+      .output-wrapper {
+        position: relative;
+      }
+      .play-btn {
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: var(--primary-color);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+      }
+      .play-btn:hover {
+        background: #e8f0fe;
+        transform: scale(1.1);
+      }
+
+      .download-btn {
+        background: rgba(240, 240, 240, 0.9);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+      }
+      .download-btn:hover {
+        background: #e8f0fe;
+        color: var(--primary-color);
+        transform: scale(1.1);
+      }
+
+      /* ================= 語音鏡像模式 ================= */
+      #voiceMirroredContainer {
+        display: none;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        background: #fff;
+        overflow: hidden;
+      }
+      .half-screen {
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        /* 對話框內容比半屏高時要能捲，原本的 hidden 會直接把字切掉 */
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .top-half {
+        background-color: var(--mirrored-bg-top);
+        transform: rotate(180deg);
+        border-bottom: 1px solid #ccdcee;
+        height: 50%;
+        flex: none;
+        min-height: 20%;
+        max-height: 80%;
+      }
+      .top-half.flipped-normal {
+        transform: rotate(0deg);
+      }
+      .bottom-half {
+        background-color: var(--mirrored-bg-bottom);
+        border-top: 1px solid #cce5d0;
+        flex: 1;
+      }
+
+      #splitter {
+        height: 20px;
+        width: 100%;
+        background: transparent;
+        cursor: row-resize;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        flex-shrink: 0;
+        margin-top: -10px;
+        margin-bottom: -10px;
+      }
+      #splitter::after {
+        content: "";
+        width: 40px;
+        height: 4px;
+        background-color: #ccc;
+        border-radius: 2px;
+        transition: background-color 0.2s;
+      }
+      #splitter:active::after {
+        background-color: var(--primary-color);
+      }
+
+      .lang-select-container {
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.6);
+        padding: 5px 10px;
+        border-radius: 15px;
+        align-self: flex-start;
+      }
+      .voice-lang-select {
+        border: none;
+        background: transparent;
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+        cursor: pointer;
+        appearance: none;
+        border-bottom: 1px dashed #999;
+        width: auto;
+        min-width: auto;
+        flex: none;
+      }
+
+      .bubble-wrapper {
+        position: relative;
+        margin-bottom: 10px;
+      }
+      .speech-bubble {
+        overflow-wrap: anywhere;
+        background: white;
+        padding: 15px;
+        border-radius: 18px;
+        font-size: 18px;
+        min-height: 50px;
+        height: auto;
+        max-height: 40vh;
+        overflow-y: auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+        word-break: break-word;
+        line-height: 1.4;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .speech-bubble:active {
+        transform: scale(0.98);
+        background: #f0f0f0;
+        transition: transform 0.1s;
+      }
+
+      .speech-bubble.translated {
+        background: #fff;
+        color: var(--primary-color);
+        border-left: 4px solid var(--primary-color);
+      }
+      .bottom-half .speech-bubble.translated {
+        border-color: var(--secondary-color);
+        color: var(--secondary-color);
+      }
+
+      .copy-btn {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.8);
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        color: #888;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+      .copy-btn:hover {
+        color: var(--primary-color);
+        background: #fff;
+        transform: scale(1.1);
+      }
+
+      /* 台語輸入中：泡泡本身變成可編輯，順手把複製鈕換成送出鈕 */
+      .bubble-wrapper.editing .speech-bubble {
+        outline: 2px solid var(--primary-color);
+        background: #fff;
+        cursor: text;
+      }
+      .bubble-wrapper.editing .copy-btn {
+        display: none;
+      }
+      .bubble-wrapper.editing .send-btn {
+        display: flex;
+      }
+      .send-btn {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: var(--primary-color);
+        border: none;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        color: #fff;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        box-shadow: 0 2px 6px rgba(66, 133, 244, 0.4);
+        z-index: 11;
+      }
+      .send-btn:active {
+        transform: scale(0.92);
+      }
+
+      .mic-btn {
+        position: absolute;
+        width: 75px;
+        height: 75px;
+        border-radius: 50%;
+        border: none;
+        background-color: var(--primary-color);
+        color: white;
+        font-size: 32px;
+        cursor: grab;
+        box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
+        transition:
+          transform 0.2s,
+          background-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        left: 50%;
+        transform: translateX(-50%);
+        touch-action: none;
+      }
+      .mic-btn:active {
+        cursor: grabbing;
+      }
+
+      /* 半屏不夠高時（例如橫向手機）夾住位置，否則麥克風鈕會整顆跑出畫面按不到。
+         90px = 按鈕 75px + 15px 邊距；使用者仍可自行拖曳。 */
+      #topMicBtn {
+        top: min(220px, calc(100% - 90px));
+        bottom: auto;
+      }
+      #bottomMicBtn {
+        top: min(220px, calc(100% - 90px));
+        bottom: auto;
+        background-color: var(--secondary-color);
+        box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4);
+      }
+
+      .mic-btn.listening {
+        animation: pulse 1.5s infinite;
+        background-color: var(--danger-color) !important;
+        box-shadow: 0 6px 20px rgba(217, 48, 37, 0.4);
+      }
+      @keyframes pulse {
+        0% {
+          transform: translateX(-50%) scale(1);
+        }
+        50% {
+          transform: translateX(-50%) scale(1.1);
+        }
+        100% {
+          transform: translateX(-50%) scale(1);
+        }
+      }
+
+      @media (max-width: 480px) {
+        /* 讓開固定在頂端的模式切換列 */
+        #textModeContainer {
+          padding-top: 70px;
+        }
+        .text-card {
+          padding: 20px;
+          width: 95%;
+        }
+        .custom-window {
+          width: 85%;
+        }
+        .half-screen {
+          padding: 15px;
+        }
+      }
+
+      /* =====================================================================
+         v67 宗龍的台語課主視覺：黑 #111111／黃 #FFD400／白 #FFFFFF
+         文字框一律白底黑字、加粗外框，投影與手機都看得清楚。
+         ===================================================================== */
+      :root {
+        --black: #111111;
+        --yellow: #ffd400;
+        --white: #ffffff;
+        --g1: #2a2a2a;
+        --g2: #f5f5f5;
+        --primary-color: #111111;
+        --danger-color: #c62828;
+        --bg-color: #f5f5f5;
+        --card-bg: #ffffff;
+        --text-color: #111111;
+        --mirrored-bg-top: #2a2a2a;
+        --mirrored-bg-bottom: #f5f5f5;
+        --tl-font: "Charis SIL", "Gentium Plus", "Noto Serif", "Times New Roman", serif;
+      }
+      body {
+        font-family: "TaigiTauhu", "Tauhu Oo", "Noto Sans TC", "Microsoft JhengHei",
+          "PingFang TC", system-ui, sans-serif;
+        background: var(--g2);
+        color: var(--black);
+      }
+
+      /* ---- 頂端模式切換（黑膠囊，選到的黃底黑字） ---- */
+      .header-controls {
+        background: var(--black);
+        border: 2px solid var(--yellow);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      }
+      .ctrl-btn {
+        color: var(--white);
+        font-weight: 700;
+      }
+      .ctrl-btn:hover {
+        color: var(--yellow);
+      }
+      .ctrl-btn.active,
+      body.voice-mode-portrait .ctrl-btn.active {
+        background: var(--yellow);
+        color: var(--black);
+        box-shadow: none;
+      }
+      body.voice-mode-portrait .ctrl-btn {
+        background: var(--black);
+        color: var(--white);
+        border: 2px solid var(--yellow);
+      }
+
+      /* ---- 文字模式卡片 ---- */
+      #textModeContainer {
+        padding: 0;
+        justify-content: flex-start;
+      }
+      .app-bar {
+        width: 100%;
+        background: var(--black);
+        color: var(--white);
+        border-bottom: 5px solid var(--yellow);
+        padding: 14px clamp(12px, 1.6vw, 28px);
+        padding-right: 260px; /* 留位給右上角模式切換 */
+        flex: none;
+      }
+      .app-bar h1 {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 30px);
+        letter-spacing: 2px;
+      }
+      .app-bar h1 b {
+        color: var(--yellow);
+      }
+      .app-bar p {
+        margin: 4px 0 0;
+        color: #ddd;
+        font-size: 14px;
+      }
+      @media (max-width: 480px) {
+        .app-bar {
+          padding-top: 64px; /* 手機：模式切換在正上方置中 */
+          padding-right: clamp(12px, 1.6vw, 28px);
+        }
+      }
+      .text-card {
+        max-width: none;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+        padding: 16px clamp(12px, 1.6vw, 28px) 8px;
+        flex: 1 0 auto;
+      }
+      .controls select,
+      select#textSourceLang,
+      select#textTargetLang {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+        font-weight: 700;
+        font-size: 17px;
+        background-image: linear-gradient(45deg, transparent 50%, var(--black) 50%),
+          linear-gradient(135deg, var(--black) 50%, transparent 50%);
+        background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+        background-size: 6px 6px;
+        background-repeat: no-repeat;
+        padding-right: 30px;
+      }
+      .swap-btn {
+        background: var(--yellow);
+        color: var(--black);
+        border: 2px solid var(--black);
+        width: 46px;
+        height: 46px;
+        padding: 0;
+      }
+      .swap-btn:hover {
+        background: var(--black);
+        color: var(--yellow);
+      }
+
+      /* 文字框：白底、黑字、2px 深色外框，聚焦時黃色光暈 */
+      textarea,
+      textarea.output-box {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--g1);
+        border-radius: 12px;
+        font-size: 20px;
+        line-height: 1.6;
+        padding: 14px 16px;
+      }
+      textarea {
+        height: 140px;
+      }
+      textarea.output-box {
+        height: 170px;
+        -webkit-user-select: text;
+        user-select: text; /* 學生可以只選取一段結果 */
+      }
+      textarea:focus {
+        border-color: var(--black);
+        box-shadow: 0 0 0 4px var(--yellow);
+      }
+      textarea::placeholder {
+        color: #777;
+      }
+      .box-label {
+        font-weight: 700;
+        font-size: 14px;
+        margin: 2px 0 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .box-label .tag {
+        background: var(--black);
+        color: var(--yellow);
+        border-radius: 6px;
+        padding: 1px 8px;
+        font-size: 12px;
+      }
+
+      /* 圓形小按鈕：白底黑框，滑過變黃 */
+      .clear-btn,
+      .mic-input-btn,
+      .copy-input-btn,
+      .paste-input-btn,
+      .copy-output-btn,
+      .play-btn,
+      .download-btn {
+        width: 40px;
+        height: 40px;
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+        font-size: 16px;
+      }
+      .clear-btn:hover,
+      .mic-input-btn:hover,
+      .copy-input-btn:hover,
+      .paste-input-btn:hover,
+      .copy-output-btn:hover,
+      .play-btn:hover,
+      .download-btn:hover {
+        background: var(--yellow);
+        color: var(--black);
+      }
+      .clear-btn:hover {
+        color: var(--danger-color);
+      }
+      .play-btn {
+        background: var(--yellow);
+      }
+      .play-btn.playing,
+      .speech-bubble.playing {
+        outline: 3px solid var(--yellow);
+        outline-offset: 2px;
+      }
+      .play-btn.playing {
+        background: var(--black);
+        color: var(--yellow);
+      }
+      .mic-input-btn.listening {
+        background: var(--danger-color);
+        border-color: var(--danger-color);
+        color: var(--white);
+      }
+
+      button.translate-btn {
+        background: var(--yellow);
+        color: var(--black);
+        border: 2px solid var(--black);
+        font-size: 20px;
+        box-shadow: 0 4px 0 var(--black);
+      }
+      button.translate-btn:hover:not(:disabled) {
+        background: var(--black);
+        color: var(--yellow);
+      }
+      button.translate-btn:disabled {
+        background: #e6e6e6;
+        color: #555;
+        border-color: #999;
+        box-shadow: none;
+      }
+
+      #model-selector-container {
+        background: var(--white);
+        border: 2px dashed var(--g1);
+        color: var(--black);
+      }
+      #current-model-select {
+        max-width: 260px;
+        border: 1px solid var(--g1);
+        background: var(--white);
+        color: var(--black);
+      }
+      .no-key-note {
+        display: none;
+        background: var(--white);
+        border-left: 6px solid var(--yellow);
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .no-key-note a {
+        color: var(--black);
+        font-weight: 700;
+      }
+
+      .site-foot {
+        width: 100%;
+        text-align: center;
+        font-size: 13px;
+        color: #555;
+        padding: 10px 12px 18px;
+        flex: none;
+      }
+      .site-foot a {
+        color: var(--black);
+      }
+
+      /* ---- 彈窗 ---- */
+      .custom-window {
+        border: 3px solid var(--black);
+      }
+      .custom-window h3 {
+        color: var(--black);
+      }
+      .custom-window input:not([type="checkbox"]) {
+        background: var(--white);
+        border: 2px solid var(--g1);
+        color: var(--black);
+      }
+      .custom-window input:not([type="checkbox"]):focus {
+        box-shadow: 0 0 0 3px var(--yellow);
+      }
+      .btn-primary {
+        background: var(--yellow);
+        color: var(--black);
+        border: 2px solid var(--black);
+      }
+      .btn-secondary {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+      }
+      .btn-warning {
+        background: var(--black);
+        color: var(--yellow);
+      }
+      .btn-danger {
+        background: var(--white);
+        color: var(--danger-color);
+        border: 2px solid var(--danger-color);
+      }
+      .polish-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        text-align: left;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 14px;
+      }
+      .toast {
+        background: var(--black);
+        color: var(--white);
+        border: 2px solid var(--yellow);
+      }
+      .toast.error {
+        background: var(--danger-color);
+        border-color: var(--danger-color);
+      }
+
+      /* ---- 語音（面對面）模式：上半黑底、下半淺灰，泡泡一律白底黑字 ---- */
+      .top-half {
+        border-bottom: 4px solid var(--yellow);
+      }
+      .bottom-half {
+        border-top: none;
+      }
+      #splitter::after {
+        background: var(--yellow);
+        width: 56px;
+        height: 6px;
+      }
+      .lang-select-container {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--black);
+      }
+      .voice-lang-select {
+        color: var(--black);
+        border-bottom: 1px dashed var(--black);
+      }
+      .speech-bubble {
+        background: var(--white);
+        color: var(--black);
+        border: 2px solid var(--g1);
+        font-size: 20px;
+        line-height: 1.55;
+      }
+      .speech-bubble.translated {
+        background: var(--white);
+        color: var(--black);
+        border: 3px solid var(--yellow);
+      }
+      .bottom-half .speech-bubble.translated {
+        border-color: var(--yellow);
+        color: var(--black);
+      }
+      .bubble-wrapper.editing .speech-bubble {
+        outline: 3px solid var(--yellow);
+      }
+      .copy-btn {
+        background: var(--white);
+        color: var(--black);
+        border: 1px solid var(--g1);
+      }
+      .copy-btn:hover {
+        background: var(--yellow);
+        color: var(--black);
+      }
+      .send-btn {
+        background: var(--yellow);
+        color: var(--black);
+      }
+      .mic-btn,
+      #bottomMicBtn {
+        background-color: var(--yellow);
+        color: var(--black);
+        border: 3px solid var(--black);
+      }
+      #topMicBtn {
+        background-color: var(--yellow);
+        color: var(--black);
+        border: 3px solid var(--white);
+      }
+      @media (max-width: 520px) {
+        .controls {
+          gap: 6px;
+        }
+        .controls select,
+        select#textSourceLang,
+        select#textTargetLang {
+          font-size: 15px;
+          padding: 10px 24px 10px 8px;
+          background-position: calc(100% - 14px) 50%, calc(100% - 8px) 50%;
+        }
+        .swap-btn {
+          width: 40px;
+          height: 40px;
+        }
+        textarea,
+        textarea.output-box {
+          font-size: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body oncontextmenu="return /TEXTAREA|INPUT/.test(event.target.tagName);">
+    <div class="header-controls" id="headerControls">
+      <button
+        class="ctrl-btn active"
+        onclick="switchMode('text')"
+        id="textModeBtn"
+      >
+        <span>文字</span><i class="fas fa-keyboard"></i>
+      </button>
+      <button class="ctrl-btn" onclick="switchMode('voice')" id="voiceModeBtn">
+        <span>語音</span><i class="fas fa-microphone-alt"></i>
+      </button>
+      <button class="ctrl-btn" onclick="openSettings()" title="設定">
+        <span>設定</span><i class="fas fa-cog"></i>
+      </button>
+      <button
+        class="ctrl-btn"
+        onclick="toggleFlipTop()"
+        id="voiceFlipBtn"
+        title="翻轉對方對話框方向"
+        style="display: none"
+      >
+        <span>翻轉</span><i class="fas fa-arrows-rotate"></i>
+      </button>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay">
+      <div class="custom-window">
+        <h3><i class="fas fa-key"></i> 設定 API Key</h3>
+        <p style="line-height: 1.6">
+          華語⇄台語互翻<b>毋免 Key</b>。<br />英、日、韓…等其他語言才需要 Google Gemini API Key。
+        </p>
+        <div class="input-group">
+          <input
+            type="password"
+            id="apiKeyInput"
+            placeholder="請貼上 API Key"
+          />
+        </div>
+        <div class="btn-group">
+          <button class="btn-secondary" onclick="closeSettings()">取消</button>
+          <button class="btn-primary" onclick="saveApiKey()">儲存設定</button>
+        </div>
+        <div style="margin-top: 10px">
+          <button
+            class="btn-warning"
+            style="width: 100%"
+            onclick="fetchAndAutoSelectModel()"
+          >
+            <i class="fas fa-sync-alt"></i> 重新偵測可用模型
+          </button>
+        </div>
+        <label class="polish-row">
+          <input type="checkbox" id="polishToggle" onchange="togglePolish(this)" />
+          <span>華→台時，請 Gemini 調整台語語序（需 Key；可能改到教育部用字，預設關閉）</span>
+        </label>
+        <details class="input-group">
+          <summary>進階</summary>
+          <div class="input-group">
+            <p style="text-align: left">API 基底 URL：</p>
+            <input
+              type="text"
+              id="baseurlInput"
+              placeholder="https://generativelanguage.googleapis.com"
+            />
+          </div>
+        </details>
+        <div
+          style="
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+          "
+        >
+          <button
+            class="btn-danger"
+            style="font-size: 14px; padding: 8px"
+            onclick="executeReset()"
+          >
+            <i class="fas fa-trash"></i> 清除 Key
+          </button>
+        </div>
+        <div style="margin-top: 10px">
+          <a
+            href="https://sites.google.com/ms.mingdao.edu.tw/tsiam/1/%E5%85%8D%E8%B2%BB%E7%94%B3%E8%AB%8Bapi"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="text-decoration: none"
+          >
+            <button
+              class="btn-primary"
+              style="font-size: 14px; padding: 8px; width: 100%"
+              type="button"
+            >
+              <i class="fas fa-key"></i> 免費申請API
+            </button>
+          </a>
+        </div>
+        <div
+          style="
+            margin-top: 12px;
+            font-size: 11px;
+            color: #888;
+            line-height: 1.5;
+            text-align: left;
+          "
+        >
+          華台翻譯：本站自製「<a href="https://cyril-mingdao.github.io/taigi-translate/" target="_blank" rel="noopener">台語翻譯系統</a>」，詞庫取自教育部《臺灣台語常用詞辭典》。<br />
+          台語發音：教育部辭典錄音接音（snd-plus）；下載台語 MP3：意傳科技「媠聲」免費展示服務，每分鐘最多 3 句。<br />
+          台語語音輸入：教育部《臺灣台語輸入法》App（iOS／Android
+          皆有），由該 App 的鍵盤語音鍵直接輸入，本頁不經手錄音。<br />
+          字型：豆腐烏 Tauhu Oo（tauhu.tw）、Charis SIL。
+        </div>
+      </div>
+    </div>
+    <div id="taigiImeModal" class="modal-overlay">
+      <div class="custom-window">
+        <h3><i class="fas fa-keyboard"></i> 台語語音輸入</h3>
+        <p style="text-align: left; line-height: 1.8; margin: 0">
+          台語語音請用<b>教育部《臺灣台語輸入法》</b>：<br />
+          1. 點一下輸入框，叫出鍵盤<br />
+          2. <span id="taigiImeSwitchStep">切換到「教育部臺灣台語輸入法」</span><br />
+          3. 按鍵盤上的<b>語音鍵</b>講話<br />
+          辨識出的台語漢字會直接落進輸入框，本頁不經手你的錄音。
+        </p>
+        <p
+          style="
+            text-align: left;
+            margin: 12px 0 0;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+          "
+        >
+          網頁沒辦法幫你切換鍵盤（作業系統不開放），但<b>切換一次之後系統會記住</b>，
+          同一次使用不必每次都切。
+        </p>
+        <p
+          id="taigiImeDesktopNote"
+          style="
+            display: none;
+            text-align: left;
+            margin: 12px 0 0;
+            color: #d93025;
+            font-size: 14px;
+          "
+        >
+          這個功能要在手機或平板上使用；桌機沒有系統輸入法可以切換。
+        </p>
+        <div style="display: flex; gap: 8px; margin-top: 16px">
+          <a
+            href="https://apps.apple.com/tw/app/id6743423554"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="flex: 1; text-decoration: none"
+          >
+            <button class="btn-secondary" style="width: 100%" type="button">
+              <i class="fab fa-apple"></i> App Store
+            </button>
+          </a>
+          <a
+            href="https://play.google.com/store/apps/details?id=tw.moe.taiwanese.taigi"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="flex: 1; text-decoration: none"
+          >
+            <button class="btn-secondary" style="width: 100%" type="button">
+              <i class="fab fa-google-play"></i> Google Play
+            </button>
+          </a>
+        </div>
+        <label
+          style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #555;
+          "
+        >
+          <input type="checkbox" id="taigiImeHintOff" /> 不再顯示
+        </label>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="closeTaigiImeHint()">
+            我知道了
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="toast-container"></div>
+
+    <div id="textModeContainer">
+      <header class="app-bar">
+        <h1>AI <b>智能翻譯機</b></h1>
+        <p>華語⇄台語毋免 API Key：台語漢字＋臺羅，會當聽發音。其他語言用 Gemini 翻譯。</p>
+      </header>
+      <div class="text-card">
+        <div id="noKeyNote" class="no-key-note">
+          目前無設定 API Key：<b>華語⇄台語</b>照常會當用；英、日、韓…等其他語言愛先到右上角「設定」貼 Key
+          （<a href="https://sites.google.com/ms.mingdao.edu.tw/tsiam/1/%E5%85%8D%E8%B2%BB%E7%94%B3%E8%AB%8Bapi" target="_blank" rel="noopener">免費申請</a>）。
+        </div>
+        <div id="model-selector-container" style="display: none">
+          <span><i class="fas fa-microchip"></i> 使用模型:</span
+          ><select id="current-model-select" onchange="manualSelectModel()">
+            <option value="">正在偵測...</option>
+          </select>
+        </div>
+        <div class="controls">
+          <select id="textSourceLang"></select
+          ><button class="swap-btn" onclick="swapTextLanguages()">
+            <i class="fas fa-exchange-alt"></i></button
+          ><select id="textTargetLang"></select>
+        </div>
+
+        <div class="input-wrapper">
+          <textarea
+            id="textInput"
+            placeholder="請輸入要翻譯的文字…（按 Enter 翻譯，Shift＋Enter 換行）"
+            aria-label="要翻譯的文字"
+          ></textarea>
+        </div>
+        <div class="input-btn-row">
+          <button
+            class="paste-input-btn"
+            onclick="pasteTextInput()"
+            title="貼上文字"
+          >
+            <i class="fas fa-paste"></i>
+          </button>
+          <button
+            class="copy-input-btn"
+            onclick="copyTextValue('textInput')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
+          <button class="clear-btn" onclick="clearTextInput()" title="清空文字">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+          <button
+            class="mic-input-btn"
+            id="textMicBtn"
+            onclick="toggleTextVoiceInput()"
+            title="語音輸入"
+          >
+            <i class="fas fa-microphone"></i>
+          </button>
+        </div>
+
+        <button
+          id="textTranslateBtn"
+          class="translate-btn"
+          onclick="doTextTranslation()"
+        >
+          開始翻譯
+        </button>
+        <div class="box-label" style="margin-top: 16px">
+          <span class="tag">結果</span> 台語會出現兩行：台語漢字＋臺羅
+        </div>
+        <div class="output-wrapper">
+          <textarea
+            id="textOutput"
+            class="output-box"
+            placeholder="翻譯結果..."
+            aria-label="翻譯結果"
+            readonly
+          ></textarea>
+        </div>
+        <div class="output-btn-row">
+          <button
+            class="copy-output-btn"
+            onclick="copyTextValue('textOutput')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
+          <button
+            class="download-btn"
+            onclick="downloadTextAudio()"
+            title="下載語音 MP3（台語用意傳媠聲，每分鐘最多 3 句）"
+            aria-label="下載語音"
+          >
+            <i class="fas fa-download"></i>
+          </button>
+          <button
+            class="play-btn"
+            onclick="playTextTranslation(this)"
+            title="聽發音（台語用教育部辭典錄音；再按一下停止）"
+            aria-label="聽發音"
+          >
+            <i class="fas fa-volume-up"></i>
+          </button>
+        </div>
+      </div>
+      <footer class="site-foot">
+        © 2026 詹宗龍（臺中明道中學）｜<a
+          href="https://sites.google.com/ms.mingdao.edu.tw/tsiam"
+          target="_blank"
+          rel="noopener"
+          >宗龍的台語課</a
+        >
+      </footer>
+    </div>
+
+    <div id="voiceMirroredContainer">
+      <div class="half-screen top-half" id="topHalf">
+        <button id="topMicBtn" class="mic-btn">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <div class="lang-select-container">
+          <i class="fas fa-user-friends"></i> 對方:
+          <select
+            id="voiceTopLang"
+            class="voice-lang-select"
+            onchange="syncLanguages('voice')"
+          ></select>
+        </div>
+        <div class="bubble-wrapper">
+          <div
+            id="topOriginalText"
+            class="speech-bubble"
+            placeholder="聆聽中..."
+          ></div>
+          <button
+            class="copy-btn"
+            onclick="copyToClipboard('topOriginalText')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
+          <button
+            class="send-btn"
+            id="topSendBtn"
+            onclick="endTaigiBubbleInput(true)"
+            title="送出翻譯"
+          >
+            <i class="fas fa-check"></i>
+          </button>
+        </div>
+        <div class="bubble-wrapper">
+          <div
+            id="topTranslatedText"
+            class="speech-bubble translated"
+            placeholder="翻譯結果..."
+          ></div>
+          <button
+            class="copy-btn"
+            onclick="copyToClipboard('topTranslatedText')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+      </div>
+      <div id="splitter"></div>
+      <div class="half-screen bottom-half">
+        <button id="bottomMicBtn" class="mic-btn">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <div class="lang-select-container">
+          <i class="fas fa-user"></i> 我方:
+          <select
+            id="voiceBottomLang"
+            class="voice-lang-select"
+            onchange="syncLanguages('voice')"
+          ></select>
+        </div>
+        <div class="bubble-wrapper">
+          <div
+            id="bottomOriginalText"
+            class="speech-bubble"
+            placeholder="聆聽中..."
+          ></div>
+          <button
+            class="copy-btn"
+            onclick="copyToClipboard('bottomOriginalText')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
+          <button
+            class="send-btn"
+            id="bottomSendBtn"
+            onclick="endTaigiBubbleInput(true)"
+            title="送出翻譯"
+          >
+            <i class="fas fa-check"></i>
+          </button>
+        </div>
+        <div class="bubble-wrapper">
+          <div
+            id="bottomTranslatedText"
+            class="speech-bubble translated"
+            placeholder="翻譯結果..."
+          ></div>
+          <button
+            class="copy-btn"
+            onclick="copyToClipboard('bottomTranslatedText')"
+            title="複製文字"
+          >
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let userApiKey = "";
+      let userBaseUrl = "https://generativelanguage.googleapis.com";
+      let selectedModel = "";
+
+      // ================= 台語翻譯引擎（v67 起改用自製「台語翻譯系統」） =================
+      // 來源：https://cyril-mingdao.github.io/taigi-translate/ 的 taigi-mt.js（引擎）＋ dict.js（詞庫）。
+      //   詞庫取自教育部《臺灣台語常用詞辭典》＋自編核心詞表，該站每週一自動更新，本頁直接引用、自動跟上。
+      //   華→台：TaigiMT.translate()，同時給台語漢字與臺羅（調符），不需要 API Key。
+      //   台→華：本頁用同一份詞庫「反查」（台語詞 → 華語詞，最長詞優先），也不需要 API Key；
+      //          有 Key 時再請 Gemini 把反查底稿潤成通順華語。
+      const TT_BASE = "https://cyril-mingdao.github.io/taigi-translate/";
+      const SNDPLUS_URL =
+        "https://cyril-mingdao.github.io/taigi-class-games/assets/snd-plus.js";
+
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.async = true;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("載入失敗：" + src));
+          document.body.appendChild(s);
+        });
+      }
+
+      const TaigiEngine = (function () {
+        let loading = null;
+        let ready = false;
+        let R = null; // 台語詞 → 華語詞
+        let T = null; // 台語詞 → 臺羅（判斷是不是台語詞用）
+        let SENT_R = null; // 台語整句 → 華語整句（辭典例句）
+        const MAXK = 8;
+        // 反查來源優先序：核心表 > 高中教材 > 700字表 > 詞彙比較 > 例句短語 > 華台同形 > 義項反查
+        const RANK = { c: 0, p: 1, e: 2, b: 3, s: 4, w: 5, g: 6 };
+        const PUNC = /[\s，。、！？；：「」『』（）()〔〕【】…—─,.!?;:"'~～\-]/g;
+        const HAN1 = /^(?:[㐀-鿿豈-﫿]|[\ud840-\ud87f][\udc00-\udfff])$/;
+        const norm = (s) => (s || "").replace(PUNC, "");
+
+        function buildReverse(dict) {
+          R = Object.create(null);
+          const best = Object.create(null);
+          for (const zh in dict.m) {
+            dict.m[zh].forEach((c, idx) => {
+              const tg = c[0],
+                src = c[1];
+              if (!tg || !(src in RANK)) return; // f（高頻義項反查）太雜，不用
+              const sc = idx * 10 + RANK[src];
+              if (!(tg in best) || sc < best[tg]) {
+                best[tg] = sc;
+                R[tg] = zh;
+              }
+            });
+          }
+          // 反查時一詞多義、詞庫預設不適合當華語的，人工指定（實測校正）
+          Object.assign(R, {
+            無: "沒有", 咧: "在", 老爸: "爸爸", 老母: "媽媽", 予: "給", 足: "很",
+            兜: "家", 頭殼: "頭", 點: "點", 分: "分", 寡: "些", 做工課: "工作",
+            阮兜: "我家", 阮厝: "我家",
+          });
+          T = dict.t;
+          SENT_R = new Map();
+          (dict.s || []).forEach((r) => {
+            if (r[1] && !SENT_R.has(norm(r[1]))) SENT_R.set(norm(r[1]), r[0]);
+          });
+        }
+
+        function load() {
+          if (ready) return Promise.resolve();
+          if (loading) return loading;
+          loading = loadScript(TT_BASE + "dict.js")
+            .then(() => loadScript(TT_BASE + "taigi-mt.js"))
+            .then(() => {
+              const dict = window.TAIGI_DICT;
+              TaigiMT.init(dict); // init 會把 m、t 解壓成物件
+              buildReverse(dict);
+              window.TAIGI_DICT = null;
+              ready = true;
+              updateTranslateBtn();
+            })
+            .catch((e) => {
+              loading = null;
+              updateTranslateBtn();
+              throw e;
+            });
+          return loading;
+        }
+
+        // 華 → 台：回傳 { han, tl }
+        function hua2tai(text) {
+          const r = TaigiMT.translate(text);
+          if (r.memory) {
+            const han = r.memory[1];
+            return { han, tl: r.memory[2] || TaigiMT.romanize(han) };
+          }
+          return { han: r.han, tl: r.tl };
+        }
+
+        // 一段連續漢字：動態規劃找「詞越長越好」的切法，再逐詞反查
+        function segRun(run) {
+          const a = Array.from(run),
+            n = a.length,
+            best = [0],
+            back = [];
+          for (let i = 1; i <= n; i++) best[i] = -1e9;
+          for (let i = 0; i < n; i++) {
+            if (best[i] <= -1e9) continue;
+            for (let L = Math.min(MAXK, n - i); L >= 1; L--) {
+              const k = a.slice(i, i + L).join("");
+              let out = null,
+                bonus = 0;
+              if (R[k] !== undefined) {
+                out = R[k];
+                bonus = 0.5;
+              } else if (T[k] !== undefined) {
+                out = k; // 台華同形詞（學校、老師…）照抄
+                bonus = 0.3;
+              } else if (L === 1) out = k;
+              if (out === null) continue;
+              const sc = best[i] + L * L + bonus;
+              if (sc > best[i + L]) {
+                best[i + L] = sc;
+                back[i + L] = [i, out];
+              }
+            }
+          }
+          const out = [];
+          let p = n;
+          while (p > 0) {
+            out.unshift(back[p][1]);
+            p = back[p][0];
+          }
+          return out.join("");
+        }
+
+        // 台 → 華（詞庫反查底稿）
+        function tai2hua(text) {
+          const src = stripTailo(text);
+          if (!src) return "";
+          const mem = SENT_R.get(norm(src));
+          if (mem) return mem;
+          let out = "",
+            buf = "";
+          for (const ch of Array.from(src)) {
+            if (HAN1.test(ch)) buf += ch;
+            else {
+              if (buf) out += segRun(buf);
+              buf = "";
+              out += ch;
+            }
+          }
+          if (buf) out += segRun(buf);
+          // 句尾小規則：問句尾「無」→「嗎」、「未」→「了沒」，句尾「矣」→「了」
+          // 「阮」接家人／家裡 → 我（阮老爸＝我爸爸），其餘維持「我們」
+          out = out
+            .replace(
+              /我們(?=爸爸|媽媽|父親|母親|爺爺|奶奶|阿公|阿嬤|哥哥|姊姊|弟弟|妹妹|老公|老婆|孩子|家)/g,
+              "我",
+            )
+            .replace(/(?:沒有|沒|無)([？?])/g, "嗎$1")
+            .replace(/未([？?])/g, "了沒$1")
+            .replace(/矣(?=[，。！？,.!?]|$)/g, "了");
+          return out;
+        }
+
+        return {
+          load,
+          hua2tai,
+          tai2hua,
+          get ready() {
+            return ready;
+          },
+        };
+      })();
+
+      // 去掉台語文字裡的臺羅：括號內的羅馬字、整行沒有漢字的羅馬字行
+      function stripTailo(text) {
+        return (text || "")
+          .split(/\n/)
+          .filter((line) => HAN_TEST.test(line) || !/[A-Za-z]/.test(line))
+          .join("\n")
+          .replace(/[（(][^）)]*[A-Za-z][^）)]*[）)]/g, "")
+          .trim();
+      }
+
+      // 漢字範圍（含中日韓擴充 A／B 與相容區；擴充 B 以高代理範圍判斷）
+      const HAN_TEST = /[㐀-鿿豈-﫿\ud840-\ud87f]/;
+
+      // 取得要念的臺羅：翻譯結果自帶的臺羅行優先，沒有就用詞庫把漢字轉成臺羅（不需要 API Key）
+      function taigiTailo(text) {
+        const lines = (text || "").split(/\n/).map((s) => s.trim());
+        const tlLines = lines.filter(
+          (l) => l && /[A-Za-z]/.test(l) && !HAN_TEST.test(l),
+        );
+        if (tlLines.length) return tlLines.join(" ");
+        const han = stripTailo(text);
+        if (!han || !TaigiEngine.ready) return "";
+        return TaigiMT.romanize(han);
+      }
+
+      // ================= 台語發音：snd-plus（教育部辭典錄音接音） =================
+      // 與「台語翻譯系統」同一套播放法：依標點切段 → 整段音檔先載好 → 無縫接播；
+      // 每個音檔各用一個 <audio>，點擊當下靜音試播解鎖（iOS）。
+      let sndPlusLoading = null;
+      function ensureSndPlus() {
+        if (window.MdSnd) return Promise.resolve();
+        if (!sndPlusLoading)
+          sndPlusLoading = loadScript(SNDPLUS_URL).catch((e) => {
+            sndPlusLoading = null;
+            throw e;
+          });
+        return sndPlusLoading;
+      }
+
+      const sp = { on: false, els: [], seq: [], i: 0, timer: 0, rate: 1.45, el: null };
+      function spMark(on) {
+        if (sp.el) sp.el.classList.toggle("playing", on);
+      }
+      function spStop() {
+        sp.on = false;
+        clearTimeout(sp.timer);
+        sp.els.forEach((a) => {
+          try {
+            a.onplaying = a.onended = a.onerror = null;
+            a.pause();
+          } catch (e) {}
+        });
+        sp.els = [];
+        spMark(false);
+        sp.el = null;
+      }
+      function spBuild(text) {
+        const seq = [],
+          re = /([^，。！？、；：,.!?;:…\n]+)([，。！？、；：,.!?;:…\n]*)/g;
+        let m;
+        while ((m = re.exec(text))) {
+          const urls = MdSnd.resolve(m[1]);
+          urls.forEach((u) => seq.push({ u }));
+          if (urls.length && m[2])
+            seq.push({ p: /[。！？.!?\n]/.test(m[2]) ? 450 : 220 });
+        }
+        while (seq.length && seq[seq.length - 1].p) seq.pop();
+        return seq;
+      }
+      function spSetRate(a) {
+        a.playbackRate = sp.rate;
+        a.preservesPitch = a.mozPreservesPitch = a.webkitPreservesPitch = true;
+      }
+      function spNext() {
+        if (!sp.on) return;
+        clearTimeout(sp.timer);
+        const it = sp.seq[sp.i++];
+        if (!it) {
+          spStop();
+          return;
+        }
+        if (it.p) {
+          sp.timer = setTimeout(spNext, it.p / sp.rate);
+          return;
+        }
+        const a = it.a;
+        let done = false;
+        const go = () => {
+          if (done) return;
+          done = true;
+          a.onended = a.onerror = a.onplaying = null;
+          spNext();
+        };
+        a.onended = go;
+        a.onerror = go;
+        a.onplaying = () => {
+          const left = ((a.duration || 0) - a.currentTime) / sp.rate - 0.05;
+          if (left > 0 && isFinite(left)) sp.timer = setTimeout(go, left * 1000);
+        };
+        spSetRate(a);
+        a._live = true;
+        a.muted = false;
+        try {
+          a.currentTime = 0;
+        } catch (e) {}
+        const pr = a.play();
+        if (pr && pr.catch) pr.catch(() => go());
+      }
+      function playTailoSeq(tl, el) {
+        if (sp.on) {
+          const same = sp.el === el;
+          spStop();
+          if (same) return; // 再按一次＝停止
+        }
+        const seq = spBuild(tl);
+        if (!seq.length) {
+          showToast("這段揣無發音");
+          return;
+        }
+        sp.on = true;
+        sp.seq = seq;
+        sp.i = 0;
+        sp.els = [];
+        sp.el = el || null;
+        spMark(true);
+        let total = 0,
+          ready = 0,
+          started = false;
+        const start = () => {
+          if (started || !sp.on) return;
+          started = true;
+          clearTimeout(sp.timer);
+          spNext();
+        };
+        seq.forEach((it) => {
+          if (!it.u) return;
+          const a = new Audio();
+          a.preload = "auto";
+          a.src = it.u;
+          it.a = a;
+          sp.els.push(a);
+          total++;
+          const f = () => {
+            a.removeEventListener("canplaythrough", f);
+            a.removeEventListener("error", f);
+            if (++ready >= total) start();
+          };
+          a.addEventListener("canplaythrough", f);
+          a.addEventListener("error", f);
+          a.muted = true;
+          const pr = a.play();
+          if (pr && pr.then)
+            pr.then(
+              () => {
+                if (!a._live) {
+                  a.pause();
+                  a.currentTime = 0;
+                }
+                a.muted = false;
+              },
+              () => {
+                a.muted = false;
+              },
+            );
+        });
+        sp.timer = setTimeout(start, 8000); // 最多等 8 秒，網路慢就先播
+      }
+
+      async function speakTaigi(text, el) {
+        if (synth) synth.cancel();
+        try {
+          await TaigiEngine.load();
+        } catch (e) {
+          showToast("台語詞庫載入失敗，請檢查網路", "error");
+          return false;
+        }
+        const tl = taigiTailo(text);
+        if (!tl) {
+          showToast("這段揣無台語發音", "error");
+          return false;
+        }
+        try {
+          await ensureSndPlus();
+        } catch (e) {
+          showToast("發音程式載入失敗，請檢查網路", "error");
+          return false;
+        }
+        playTailoSeq(tl, el);
+        return true;
+      }
+
+      // 意傳「媠聲」整句語音：只用在「下載台語 MP3」。
+      // 來源：意傳科技 ithuan.tw（免費展示服務，限流 1 IP 每分鐘 3 句），餵臺羅調符、回傳 MP3。
+      const ITHUAN_TTS_URL = "https://hapsing.ithuan.tw/bangtsam";
+      const ITHUAN_MIN_INTERVAL_MS = 21000;
+      let lastIthuanRequestTime = 0;
+      // 依語言代碼分派：臺灣台語走媠聲／接音，其餘語言走瀏覽器內建語音
+      async function smartSpeak(text, langCode, el) {
+        if (langCode === "nan-TW") {
+          await speakTaigi(text, el);
+        } else {
+          spStop();
+          speakText(text, langCode);
+        }
+      }
+
+      // ================= 臺灣台語語音輸入：教育部輸入法 =================
+      // 教育部《臺灣台語輸入法》(tw.moe.taiwanese.taigi) 是系統級 IME，iOS 與
+      // Android 都有，鍵盤上就有語音鍵；辨識出的台語漢字會直接送進網頁的輸入框，
+      // 網頁端不需要任何串接、金鑰或伺服器，學生的語音也留在教育部的服務內。
+      // 註：該 App 的語音辨識是廠商的雲端私有介面（非內建模型），無法內嵌進網頁；
+      //     瀏覽器內建的 webkitSpeechRecognition 對 nan-TW 支援很差，因此台語
+      //     不再走內建辨識，改為引導使用者切換輸入法。
+      const TAIGI_IME_HINT_KEY = "taigi_ime_hint_off";
+
+      // force：從「怎麼設定？」點進來時，即使勾過「不再顯示」也要開
+      function showTaigiImeHint(targetEl, force) {
+        if (targetEl) targetEl.focus(); // 先把鍵盤叫出來
+        if (!force && storageGet(TAIGI_IME_HINT_KEY) === "1") {
+          showToast("請切換到教育部臺灣台語輸入法，按鍵盤上的語音鍵");
+          return;
+        }
+        // 桌機沒有系統輸入法可切換
+        const desktop =
+          window.matchMedia("(pointer: fine)").matches &&
+          !("ontouchstart" in window);
+        document.getElementById("taigiImeDesktopNote").style.display = desktop
+          ? "block"
+          : "none";
+        document.getElementById("taigiImeHintOff").checked = false;
+        openModal("taigiImeModal");
+      }
+
+      function closeTaigiImeHint() {
+        // 先關視窗、再存設定：存不進去（無痕模式、file://）也不能讓視窗卡住
+        closeModal("taigiImeModal");
+        if (document.getElementById("taigiImeHintOff").checked) {
+          storageSet(TAIGI_IME_HINT_KEY, "1");
+        }
+      }
+
+      // ---- 語音鏡像模式的台語輸入 ----
+      // 輸入法只能打進「可輸入元素」，所以按下台語那側的麥克風時，
+      // 才把該側的原文泡泡暫時變成 contenteditable 並聚焦，送出後立刻變回唯讀。
+      // 不做成永久可編輯：泡泡平時要保留「點一下朗讀」，也避免隨手誤觸改到內容。
+      let editingSide = null;
+      let vvHandler = null;
+
+      function placeCaretAtEnd(el) {
+        const r = document.createRange();
+        r.selectNodeContents(el);
+        r.collapse(false);
+        const s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+      }
+
+      // 手機鍵盤會蓋掉半個畫面，而鏡像版面是填滿 100dvh 又 overflow:hidden，
+      // 瀏覽器捲不動。改成把容器高度跟著 visualViewport 縮，兩個半屏一起讓開。
+      function keepBubbleVisible() {
+        if (!window.visualViewport) return;
+        const c = document.getElementById("voiceMirroredContainer");
+        vvHandler = () => {
+          const h = window.visualViewport.height;
+          // 量到異常高度（視窗還沒量好、或非可視分頁）就別動，免得把版面壓成 0
+          if (!h || h < 200) {
+            c.style.height = "";
+            return;
+          }
+          c.style.height = h + "px";
+          if (editingSide) {
+            const el = document.getElementById(editingSide + "OriginalText");
+            if (el) el.scrollIntoView({ block: "nearest" });
+          }
+        };
+        window.visualViewport.addEventListener("resize", vvHandler);
+        window.visualViewport.addEventListener("scroll", vvHandler);
+        vvHandler();
+      }
+
+      function releaseBubbleVisible() {
+        document.getElementById("voiceMirroredContainer").style.height = "";
+        if (window.visualViewport && vvHandler) {
+          window.visualViewport.removeEventListener("resize", vvHandler);
+          window.visualViewport.removeEventListener("scroll", vvHandler);
+        }
+        vvHandler = null;
+      }
+
+      function startTaigiBubbleInput(side) {
+        if (editingSide) endTaigiBubbleInput(false);
+        const el = document.getElementById(side + "OriginalText");
+        editingSide = side;
+        if (el.innerText.trim() === "...") el.innerText = "";
+        el.setAttribute("contenteditable", "true");
+        el.parentElement.classList.add("editing");
+        // 必須在使用者手勢的同一個任務內聚焦，手機鍵盤才會跳出來（iOS 尤其嚴格）
+        el.focus();
+        placeCaretAtEnd(el);
+        keepBubbleVisible();
+        showToast("切到教育部臺灣台語輸入法，按鍵盤語音鍵講話，講完按 ✓");
+      }
+
+      function endTaigiBubbleInput(submit) {
+        const side = editingSide;
+        if (!side) return;
+        const el = document.getElementById(side + "OriginalText");
+        el.removeAttribute("contenteditable");
+        el.parentElement.classList.remove("editing");
+        editingSide = null;
+        releaseBubbleVisible();
+        if (!submit) return;
+        const text = el.innerText.trim();
+        if (!text) {
+          showToast("還沒有輸入文字");
+          return;
+        }
+        doVoiceTranslation(text, side);
+      }
+
+      // ================= 翻譯路由 =================
+      const IDX_ZH = 0; // 繁體中文
+      const IDX_TAI = 1; // 臺灣台語
+      const POLISH_KEY = "taigi_gemini_polish";
+      const isLocalLang = (i) => Number(i) === IDX_ZH || Number(i) === IDX_TAI;
+
+      // 呼叫 Gemini（金鑰放在標頭 x-goog-api-key，不放網址，避免留在紀錄裡）
+      async function geminiGenerate(prompt, model) {
+        const res = await fetch(
+          `${userBaseUrl}/v1beta/models/${model || selectedModel || DEFAULT_MODEL}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": userApiKey,
+            },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.candidates) {
+          const err = new Error(
+            (data.error && data.error.message) || "HTTP " + res.status,
+          );
+          err.status = res.status;
+          throw err;
+        }
+        return data.candidates[0].content.parts
+          .map((p) => p.text || "")
+          .join("")
+          .replace(/<think>[\s\S]*?<\/think>/gi, "")
+          .trim();
+      }
+
+      // （選用）Gemini 潤飾台語語序：只准調語序、補虛詞，不准改用字
+      async function polishTaigi(sourceZh, draft) {
+        const prompt = `You are a Taiwanese Hokkien (Tâi-gí) editor. Below is a Mandarin sentence and a DRAFT Taiwanese translation produced by a dictionary based on Taiwan's Ministry of Education Tâi-gí dictionary.
+
+Mandarin: "${sourceZh}"
+Draft Taiwanese: "${draft}"
+
+Rules:
+1. Keep EVERY Chinese character choice from the draft (教育部推薦用字). Do NOT swap them back to Mandarin words or other variants.
+2. Only fix word order, add missing function words/particles, and repair fragments so it reads as natural spoken Tâi-gí.
+3. Output ONLY the Taiwanese Han-character sentence. No romanization, no parentheses, no explanation.`;
+        try {
+          const out = await geminiGenerate(prompt);
+          return stripTailo(out.split(/\n/)[0]) || draft;
+        } catch (e) {
+          return draft;
+        }
+      }
+
+      // Gemini 把「詞庫反查底稿」潤成通順華語
+      async function polishHua(taigi, draft) {
+        const prompt = `Translate the following Taiwanese Hokkien (Tâi-gí, written in Taiwan Ministry of Education Han characters) into natural Traditional Chinese as used in Taiwan.
+A dictionary-based word-by-word draft is given as a hint; fix its wording and word order where needed.
+
+Taiwanese: "${taigi}"
+Draft Mandarin: "${draft}"
+
+Output ONLY the Traditional Chinese translation, nothing else.`;
+        try {
+          return (await geminiGenerate(prompt)) || draft;
+        } catch (e) {
+          return draft;
+        }
+      }
+
+      function needKeyMsg() {
+        showToast("華語、台語以外的語言要設定 Gemini API Key 才會當翻譯", "error");
+        return "[系統訊息] 這个語言需要設定 API Key（右上角「設定」）";
+      }
+
+      // 台語結果一律輸出「台語漢字＼n臺羅」兩行
+      async function translateSmart(text, sIdx, tIdx) {
+        const s = Number(sIdx),
+          t = Number(tIdx);
+        if (s === t) return text;
+        if ((!isLocalLang(s) || !isLocalLang(t)) && !userApiKey)
+          return needKeyMsg();
+
+        if (t === IDX_TAI) {
+          let zh = text;
+          if (s !== IDX_ZH) {
+            zh = await callGeminiAPI(text, languages[s].prompt, languages[IDX_ZH].prompt);
+            if (zh.startsWith("[系統訊息]")) return zh;
+          }
+          await TaigiEngine.load();
+          let { han, tl } = TaigiEngine.hua2tai(zh);
+          if (userApiKey && storageGet(POLISH_KEY) === "1") {
+            const polished = await polishTaigi(zh, han);
+            if (polished && polished !== han) {
+              han = polished;
+              tl = TaigiMT.romanize(han);
+            }
+          }
+          return han + "\n" + tl;
+        }
+
+        if (s === IDX_TAI) {
+          await TaigiEngine.load();
+          const src = stripTailo(text);
+          if (!src) {
+            showToast("請輸入台語漢字（羅馬字毋免輸入）", "error");
+            return "";
+          }
+          let zh = TaigiEngine.tai2hua(src);
+          if (userApiKey) zh = await polishHua(src, zh);
+          if (t === IDX_ZH) return zh;
+          return await callGeminiAPI(zh, languages[IDX_ZH].prompt, languages[t].prompt);
+        }
+
+        return await callGeminiAPI(text, languages[s].prompt, languages[t].prompt);
+      }
+      const languages = [
+        {
+          name: "繁體中文",
+          prompt: "Traditional Chinese",
+          speechCode: "zh-TW",
+        },
+        {
+          name: "臺灣台語 (Tâi-gí)",
+          // 翻譯已改由 g2m2 詞庫負責，這段 prompt 只剩 detectLanguage 用來辨識語言
+          prompt: "Taiwanese Hokkien (Tâi-gí)",
+          speechCode: "nan-TW",
+        },
+        { name: "English (英語)", prompt: "English", speechCode: "en-US" },
+        { name: "日本語 (日語)", prompt: "Japanese", speechCode: "ja-JP" },
+        { name: "한국어 (韓語)", prompt: "Korean", speechCode: "ko-KR" },
+        { name: "Français (法語)", prompt: "French", speechCode: "fr-FR" },
+        { name: "Español (西班牙語)", prompt: "Spanish", speechCode: "es-ES" },
+        { name: "Deutsch (德語)", prompt: "German", speechCode: "de-DE" },
+        {
+          name: "Tiếng Việt (越南語)",
+          prompt: "Vietnamese",
+          speechCode: "vi-VN",
+        },
+        { name: "ภาษาไทย (泰語)", prompt: "Thai", speechCode: "th-TH" },
+        {
+          name: "Bahasa Melayu (馬來語)",
+          prompt: "Malay",
+          speechCode: "ms-MY",
+        },
+        {
+          name: "Bahasa Indonesia (印尼語)",
+          prompt: "Indonesian",
+          speechCode: "id-ID",
+        },
+        { name: "Русский (俄語)", prompt: "Russian", speechCode: "ru-RU" },
+        { name: "العربية (阿拉伯語)", prompt: "Arabic", speechCode: "ar-SA" },
+      ];
+      let currentMode = "text",
+        recognition,
+        isListening = false,
+        activeMicSide = null,
+        synth = window.speechSynthesis;
+      let isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+      // localStorage 在 file://、無痕模式或配額滿時會丟例外。
+      // 一律包起來，免得存取失敗把後面的流程整個中斷。
+      function storageGet(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          return null;
+        }
+      }
+      function storageSet(key, val) {
+        try {
+          localStorage.setItem(key, val);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      function storageRemove(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      }
+
+      function showToast(m, t = "normal") {
+        const c = document.getElementById("toast-container"),
+          d = document.createElement("div");
+        d.className = "toast" + (t === "error" ? " error" : "");
+        d.innerHTML = m;
+        c.appendChild(d);
+        requestAnimationFrame(() => d.classList.add("show"));
+        setTimeout(() => {
+          d.classList.remove("show");
+          setTimeout(() => d.remove(), 300);
+        }, 6000);
+      }
+      function openModal(id) {
+        const m = document.getElementById(id);
+        m.style.display = "flex";
+        requestAnimationFrame(() => m.classList.add("show"));
+      }
+      function closeModal(id) {
+        const m = document.getElementById(id);
+        m.classList.remove("show");
+        setTimeout(() => (m.style.display = "none"), 300);
+      }
+
+      const DEFAULT_MODEL = "gemini-2.5-flash";
+      // 只留「能翻譯文字」的模型：排除語音合成、生圖、嵌入、即時音訊等
+      const NON_TEXT_MODEL =
+        /tts|image|imagen|embedding|aqa|veo|live|audio|customtools|learnlm|robotics|computer-use|native|thinking-exp|banana|transcribe|omni|argon|carbon|hydrogen|neon/i;
+
+      function initApiKey() {
+        const k = storageGet("gemini_api_key");
+        const u =
+          storageGet("gemini_base_url") ||
+          "https://generativelanguage.googleapis.com";
+        userBaseUrl = u;
+        // v67：沒有 Key 也能用華台互翻，所以不再一開頁就跳設定視窗
+        if (k) {
+          userApiKey = k;
+          setTimeout(() => fetchAndAutoSelectModel(), 600);
+        }
+        refreshKeyUi();
+      }
+
+      // 依有沒有 Key 更新：模型列、語言選單標示、設定視窗勾選
+      function refreshKeyUi() {
+        const has = !!userApiKey;
+        document.getElementById("model-selector-container").style.display =
+          has ? "flex" : "none";
+        document.getElementById("noKeyNote").style.display = has ? "none" : "block";
+        ["textSourceLang", "textTargetLang", "voiceTopLang", "voiceBottomLang"].forEach(
+          (id) => {
+            const el = document.getElementById(id);
+            Array.from(el.options).forEach((o) => {
+              const i = Number(o.value);
+              o.textContent =
+                languages[i].name + (has || isLocalLang(i) ? "" : "（需 Key）");
+            });
+          },
+        );
+        document.getElementById("polishToggle").checked =
+          storageGet(POLISH_KEY) === "1";
+      }
+      function togglePolish(el) {
+        if (el.checked) storageSet(POLISH_KEY, "1");
+        else storageRemove(POLISH_KEY);
+      }
+      function openSettings() {
+        document.getElementById("apiKeyInput").value = userApiKey;
+        openModal("settingsModal");
+      }
+      function closeSettings() {
+        closeModal("settingsModal");
+      }
+      function saveApiKey() {
+        const k = document.getElementById("apiKeyInput").value.trim();
+        const u = document.getElementById("baseurlInput").value.trim();
+        if (k) {
+          storageSet("gemini_api_key", k);
+          userApiKey = k;
+          if (u) {
+            storageSet("gemini_base_url", u);
+            userBaseUrl = u;
+          }
+          closeModal("settingsModal");
+          showToast("設定已儲存");
+          refreshKeyUi();
+          fetchAndAutoSelectModel();
+        } else {
+          showToast("請輸入 Key", "error");
+        }
+      }
+      function executeReset() {
+        storageRemove("gemini_api_key");
+        storageRemove("gemini_base_url");
+        userApiKey = "";
+        userBaseUrl = "https://generativelanguage.googleapis.com";
+        closeModal("settingsModal");
+        refreshKeyUi();
+        showToast("Key 已清除（華台互翻照常可用）");
+      }
+
+      async function fetchAndAutoSelectModel() {
+        if (!userApiKey) return;
+        const select = document.getElementById("current-model-select");
+        select.innerHTML = "<option>偵測中...</option>";
+        select.disabled = true;
+        try {
+          const res = await fetch(`${userBaseUrl}/v1beta/models?pageSize=200`, {
+            headers: { "x-goog-api-key": userApiKey },
+          });
+          const data = await res.json();
+          if (!res.ok || !data.models) {
+            select.innerHTML = '<option value="">(Key 無效)</option>';
+            return;
+          }
+          const availableModels = data.models
+            .filter((m) =>
+              (m.supportedGenerationMethods || []).includes("generateContent"),
+            )
+            .map((m) => m.name.replace("models/", ""))
+            .filter((n) => /^(gemini|gemma)/.test(n) && !NON_TEXT_MODEL.test(n));
+          if (availableModels.length === 0) {
+            select.innerHTML = '<option value="">(無可用模型)</option>';
+            return;
+          }
+          // 排序：預設模型 → 其他 flash → 其他
+          const rank = (n) =>
+            n === DEFAULT_MODEL ? 0 : /flash/.test(n) && !/lite/.test(n) ? 1 : /flash/.test(n) ? 2 : 3;
+          availableModels.sort((a, b) => rank(a) - rank(b));
+          select.innerHTML = "";
+          availableModels.forEach((model) => select.add(new Option(model, model)));
+          select.disabled = false;
+          const saved = storageGet("gemini_model");
+          selectedModel = availableModels.includes(saved) ? saved : availableModels[0];
+          select.value = selectedModel;
+        } catch (e) {
+          select.innerHTML = `<option value="${DEFAULT_MODEL}">${DEFAULT_MODEL}</option>`;
+          select.disabled = false;
+          selectedModel = DEFAULT_MODEL;
+        }
+      }
+      function manualSelectModel() {
+        selectedModel = document.getElementById("current-model-select").value;
+        storageSet("gemini_model", selectedModel);
+        showToast(`已切換: ${selectedModel}`);
+      }
+
+      window.onload = () => {
+        initLanguageSelects();
+        initApiKey();
+        applyInputLangs();
+        applyImeSwitchHint();
+        checkSpeechSupport();
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        initDraggableMic("topMicBtn", "top");
+        initDraggableMic("bottomMicBtn", "bottom");
+        initSplitter();
+        setupTextPlayback();
+        // 背景載入台語翻譯系統詞庫（約 0.9 MB）；載好前翻譯鈕顯示「詞庫載入中…」
+        updateTranslateBtn();
+        TaigiEngine.load().catch(() =>
+          showToast("台語詞庫載入失敗，請檢查網路後重新整理", "error"),
+        );
+
+        attachImeSafeEnter(document.getElementById("textInput"), () =>
+          doTextTranslation(),
+        );
+        ["topOriginalText", "bottomOriginalText"].forEach((id) => {
+          attachImeSafeEnter(document.getElementById(id), () => {
+            if (editingSide) endTaigiBubbleInput(true);
+          });
+        });
+      };
+
+      // IME 組字中按 Enter 是「選字」，不能當成送出。
+      // Android 各家輸入法對這三個訊號的支援並不一致，三重防護缺一不可：
+      //   e.isComposing（標準）、keyCode 229（舊版 WebView／部分 IME）、
+      //   以及自行維護的 composition 旗標。
+      function attachImeSafeEnter(el, onEnter) {
+        let composing = false;
+        el.addEventListener("compositionstart", () => {
+          composing = true;
+        });
+        el.addEventListener("compositionend", () => {
+          composing = false;
+        });
+        el.addEventListener("keydown", function (e) {
+          if (e.isComposing || e.keyCode === 229 || composing) return;
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onEnter();
+          }
+        });
+      }
+
+      function setupTextPlayback() {
+        const bubbles = [
+          {
+            id: "topOriginalText",
+            getLangIdx: () => document.getElementById("voiceTopLang").value,
+          },
+          {
+            id: "topTranslatedText",
+            getLangIdx: () => document.getElementById("voiceTopLang").value,
+          },
+          {
+            id: "bottomOriginalText",
+            getLangIdx: () => document.getElementById("voiceBottomLang").value,
+          },
+          {
+            id: "bottomTranslatedText",
+            getLangIdx: () => document.getElementById("voiceBottomLang").value,
+          },
+        ];
+
+        bubbles.forEach((item) => {
+          const el = document.getElementById(item.id);
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (el.isContentEditable) return; // 編輯中：點擊是放游標，不朗讀
+            const text = el.innerText;
+            if (text && text !== "...") {
+              const langIndex = item.getLangIdx();
+              const langCode = languages[langIndex].speechCode;
+              smartSpeak(text, langCode, el);
+            }
+          });
+        });
+      }
+
+      // ================= 文字模式：語音輸入 =================
+      let textRecognition = null;
+      let isTextListening = false;
+      function toggleTextVoiceInput() {
+        const srcIdx = document.getElementById("textSourceLang").value;
+        // 臺灣台語不走瀏覽器內建辨識（Chrome 對 nan-TW 支援很差），改用教育部輸入法
+        if (Number(srcIdx) === IDX_TAI) {
+          if (isTextListening) stopTextVoiceInput();
+          showTaigiImeHint(document.getElementById("textInput"));
+          return;
+        }
+        if (isTextListening) {
+          stopTextVoiceInput();
+        } else {
+          startTextVoiceInput();
+        }
+      }
+      function startTextVoiceInput() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+          showToast("請用 Chrome 使用語音輸入", "error");
+          return;
+        }
+        textRecognition = new SR();
+        textRecognition.continuous = !isIOS;
+        textRecognition.interimResults = true;
+        const srcIdx = document.getElementById("textSourceLang").value;
+        textRecognition.lang = languages[srcIdx].speechCode;
+
+        const inputEl = document.getElementById("textInput");
+        const baseText = inputEl.value.trim()
+          ? inputEl.value.trim() + " "
+          : "";
+        textRecognition.onresult = (e) => {
+          let interim = "",
+            final = "";
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+            else interim += e.results[i][0].transcript;
+          }
+          inputEl.value = baseText + final + interim;
+        };
+        textRecognition.onerror = (e) => {
+          if (e.error === "not-allowed")
+            showToast("無法存取麥克風，請檢查權限", "error");
+          if (e.error !== "no-speech") stopTextVoiceInput();
+        };
+        textRecognition.onend = () => {
+          isTextListening = false;
+          document.getElementById("textMicBtn").classList.remove("listening");
+          if (inputEl.value.trim()) doTextTranslation();
+        };
+        try {
+          textRecognition.start();
+          isTextListening = true;
+          document.getElementById("textMicBtn").classList.add("listening");
+        } catch (e) {
+          isTextListening = false;
+        }
+      }
+      function stopTextVoiceInput() {
+        if (textRecognition) textRecognition.stop();
+        isTextListening = false;
+        document.getElementById("textMicBtn").classList.remove("listening");
+      }
+
+      function copyTextValue(elementId) {
+        const el = document.getElementById(elementId);
+        const text = el.value;
+        if (!text) {
+          showToast("沒有文字可複製");
+          return;
+        }
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            showToast("已複製到剪貼簿");
+          })
+          .catch(() => {
+            showToast("複製失敗", "error");
+          });
+      }
+
+      async function pasteTextInput() {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (!text) {
+            showToast("剪貼簿無文字內容");
+            return;
+          }
+          document.getElementById("textInput").value = text;
+          showToast("已貼上文字");
+        } catch (e) {
+          showToast("貼上失敗，請確認瀏覽器剪貼簿權限", "error");
+        }
+      }
+
+      function clearTextInput() {
+        document.getElementById("textInput").value = "";
+        document.getElementById("textOutput").value = "";
+        showToast("內容已清除");
+      }
+
+      function copyToClipboard(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        if (!text || text === "...") {
+          showToast("沒有文字可複製");
+          return;
+        }
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            showToast("已複製到剪貼簿");
+          })
+          .catch((err) => {
+            showToast("複製失敗", "error");
+          });
+      }
+
+      function initSplitter() {
+        const splitter = document.getElementById("splitter");
+        const topHalf = document.getElementById("topHalf");
+        const container = document.getElementById("voiceMirroredContainer");
+        const headerControls = document.getElementById("headerControls");
+        let isDragging = false;
+
+        const onMove = (clientY) => {
+          const rect = container.getBoundingClientRect();
+          const relativeY = clientY - rect.top;
+          const percentage = (relativeY / rect.height) * 100;
+          if (percentage > 20 && percentage < 80) {
+            topHalf.style.height = `${percentage}%`;
+            if (document.body.classList.contains("voice-mode-portrait")) {
+              headerControls.style.top = `calc(${percentage}% + 20px)`;
+            }
+          }
+        };
+
+        const onTouchMove = (e) => {
+          if (!isDragging) return;
+          e.preventDefault();
+          onMove(e.touches[0].clientY);
+        };
+        const onMouseMove = (e) => {
+          if (!isDragging) return;
+          e.preventDefault();
+          onMove(e.clientY);
+        };
+        const onEnd = () => {
+          isDragging = false;
+        };
+
+        splitter.addEventListener("mousedown", () => (isDragging = true));
+        splitter.addEventListener(
+          "touchstart",
+          (e) => {
+            isDragging = true;
+            e.preventDefault();
+          },
+          { passive: false },
+        );
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("touchmove", onTouchMove, { passive: false });
+        window.addEventListener("mouseup", onEnd);
+        window.addEventListener("touchend", onEnd);
+
+        if (document.body.classList.contains("voice-mode-portrait")) {
+          headerControls.style.top = `calc(50% + 20px)`;
+        }
+      }
+
+      function handleResize() {
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const isVoice = currentMode === "voice";
+        if (isPortrait && isVoice) {
+          document.body.classList.add("voice-mode-portrait");
+          const topHalfHeight =
+            document.getElementById("topHalf").style.height || "50%";
+          if (topHalfHeight.includes("calc")) {
+            document.getElementById("headerControls").style.top =
+              "calc(50% + 20px)";
+          } else {
+            document.getElementById("headerControls").style.top =
+              `calc(${topHalfHeight} + 20px)`;
+          }
+        } else {
+          document.body.classList.remove("voice-mode-portrait");
+          document.getElementById("headerControls").style.top = "";
+        }
+      }
+
+      function initLanguageSelects() {
+        const ids = [
+          "textSourceLang",
+          "textTargetLang",
+          "voiceTopLang",
+          "voiceBottomLang",
+        ];
+        ids.forEach((id) => {
+          const el = document.getElementById(id);
+          el.innerHTML = "";
+          languages.forEach((l, i) => {
+            el.add(new Option(l.name, i));
+          });
+        });
+        document
+          .getElementById("textSourceLang")
+          .addEventListener("change", applyInputLangs);
+        document.getElementById("textSourceLang").selectedIndex = 0;
+        // v67：預設 華語→台語（不需要 Key 就能直接用）
+        document.getElementById("textTargetLang").selectedIndex = 1;
+        document.getElementById("voiceTopLang").selectedIndex = 1;
+        document.getElementById("voiceBottomLang").selectedIndex = 0;
+      }
+      function syncLanguages(source) {
+        applyInputLangs();
+      }
+
+      // 把目前選的語言寫進輸入元素的 lang 屬性。
+      // ⚠️ 這只是「提示」：作業系統不允許網頁指定或切換輸入法，
+      //    部分鍵盤會參考它自動切到對應語言，但沒有保證。
+      function inputLangCode(idx) {
+        const n = Number(idx);
+        if (n === IDX_TAI) return "nan-Hant-TW"; // 臺灣台語的完整 BCP-47 標記
+        return (languages[n] && languages[n].speechCode) || "";
+      }
+
+      function setLangAttr(el, idx) {
+        if (!el) return;
+        const code = inputLangCode(idx);
+        if (code) el.setAttribute("lang", code);
+        else el.removeAttribute("lang");
+      }
+
+      function applyInputLangs() {
+        setLangAttr(
+          document.getElementById("textInput"),
+          document.getElementById("textSourceLang").value,
+        );
+        setLangAttr(
+          document.getElementById("topOriginalText"),
+          document.getElementById("voiceTopLang").value,
+        );
+        setLangAttr(
+          document.getElementById("bottomOriginalText"),
+          document.getElementById("voiceBottomLang").value,
+        );
+      }
+
+      // 依平台顯示實際的切換手勢——這是網頁唯一能幫上忙的地方
+      function applyImeSwitchHint() {
+        const ua = navigator.userAgent;
+        const el = document.getElementById("taigiImeSwitchStep");
+        if (!el) return;
+        if (isIOS) {
+          el.innerHTML =
+            "按鍵盤左下角的<b>🌐 地球鍵</b>切換到「臺灣台語輸入法」（長按可直接挑選）";
+        } else if (/Android/i.test(ua)) {
+          el.innerHTML =
+            "按導覽列右下角的<b>鍵盤圖示</b>切換，或<b>長按空白鍵</b>選「臺灣台語輸入法」";
+        } else {
+          el.innerHTML = "切換到「教育部臺灣台語輸入法」";
+        }
+      }
+
+      function getSpeechRecognition() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) return null;
+        const recog = new SR();
+        recog.continuous = !isIOS;
+        recog.interimResults = true;
+        recog.onresult = (e) => {
+          let interim = "",
+            final = "";
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+            else interim += e.results[i][0].transcript;
+          }
+          const id =
+            activeMicSide === "top" ? "topOriginalText" : "bottomOriginalText";
+          document.getElementById(id).innerText = final || interim || "...";
+          if (final) window.lastFinalTranscript = final;
+          if (interim) window.lastInterimTranscript = interim;
+        };
+        recog.onerror = (e) => {
+          if (e.error !== "no-speech") stopListening();
+          if (e.error === "not-allowed")
+            showToast("無法存取麥克風，請檢查權限", "error");
+        };
+        recog.onend = () => {
+          isListening = false;
+          updateMicUI(false);
+          let textToTranslate = window.lastFinalTranscript;
+          if (!textToTranslate && isIOS && window.lastInterimTranscript)
+            textToTranslate = window.lastInterimTranscript;
+          if (textToTranslate && activeMicSide) {
+            doVoiceTranslation(textToTranslate, activeMicSide);
+            window.lastFinalTranscript = "";
+            window.lastInterimTranscript = "";
+          }
+        };
+        return recog;
+      }
+
+      function checkSpeechSupport() {
+        if (
+          !("webkitSpeechRecognition" in window) &&
+          !("SpeechRecognition" in window)
+        ) {
+          showToast("請用 Chrome", "error");
+          document.getElementById("voiceModeBtn").disabled = true;
+        } else if (!isIOS) {
+          recognition = getSpeechRecognition();
+        }
+      }
+
+      function switchMode(m) {
+        if (editingSide) endTaigiBubbleInput(false);
+        currentMode = m;
+        document
+          .getElementById("textModeBtn")
+          .classList.toggle("active", m === "text");
+        document
+          .getElementById("voiceModeBtn")
+          .classList.toggle("active", m === "voice");
+        document.getElementById("textModeContainer").style.display =
+          m === "text" ? "flex" : "none";
+        document.getElementById("voiceMirroredContainer").style.display =
+          m === "voice" ? "flex" : "none";
+        document.getElementById("voiceFlipBtn").style.display =
+          m === "voice" ? "flex" : "none";
+        handleResize();
+      }
+
+      let isTopFlipped = false;
+      function toggleFlipTop() {
+        isTopFlipped = !isTopFlipped;
+        document
+          .getElementById("topHalf")
+          .classList.toggle("flipped-normal", isTopFlipped);
+        document
+          .getElementById("voiceFlipBtn")
+          .classList.toggle("active", isTopFlipped);
+      }
+
+      function initDraggableMic(btnId, side) {
+        const btn = document.getElementById(btnId);
+        let startX, startY, startLeft, startTop;
+        let isDragging = false;
+        let dragThreshold = 10;
+        let isPressing = false;
+
+        /* === iOS 專用修復 === */
+        /* iOS Safari 中 touchstart (passive:false) + touch-action:none 會導致 */
+        /* 瀏覽器無法將觸控視為有效的使用者手勢，因而阻擋麥克風權限請求。 */
+        /* 改用 click 事件（iOS 會在 tap 後合成 click）來啟動語音辨識。 */
+        if (isIOS) {
+          let iosTouchMoved = false;
+          btn.addEventListener("touchstart", function (e) {
+            iosTouchMoved = false;
+            if (synth) {
+              synth.cancel();
+              var empty = new SpeechSynthesisUtterance(" ");
+              empty.volume = 0;
+              empty.duration = 0.1;
+              synth.speak(empty);
+            }
+            var touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startLeft = btn.offsetLeft;
+            startTop = btn.offsetTop;
+            isDragging = false;
+            isPressing = true;
+          }, { passive: true });
+
+          btn.addEventListener("touchmove", function (e) {
+            if (!isPressing) return;
+            var touch = e.touches[0];
+            var deltaX = touch.clientX - startX;
+            var deltaY = touch.clientY - startY;
+            if (!isDragging && (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold)) {
+              isDragging = true;
+              iosTouchMoved = true;
+              stopListening();
+            }
+            if (isDragging) {
+              e.preventDefault();
+              if (side === "top") {
+                btn.style.left = startLeft - deltaX + "px";
+                btn.style.top = startTop - deltaY + "px";
+              } else {
+                btn.style.left = startLeft + deltaX + "px";
+                btn.style.top = startTop + deltaY + "px";
+              }
+            }
+          }, { passive: false });
+
+          window.addEventListener("touchend", function () {
+            if (isPressing) {
+              isPressing = false;
+              if (!isDragging) stopListening();
+              isDragging = false;
+            }
+          });
+
+          /* iOS 上以 click 啟動語音辨識，確保瀏覽器認定為使用者手勢 */
+          btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            if (iosTouchMoved) { iosTouchMoved = false; return; }
+            startListening(side);
+          });
+
+          return; /* iOS 路徑結束，不執行下方非 iOS 邏輯 */
+        }
+        /* === iOS 修復結束 === */
+
+        const handleStart = (e) => {
+          if (synth) {
+            synth.cancel();
+            const empty = new SpeechSynthesisUtterance(" ");
+            empty.volume = 0;
+            empty.duration = 0.1;
+            synth.speak(empty);
+          }
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          startX = clientX;
+          startY = clientY;
+          startLeft = btn.offsetLeft;
+          startTop = btn.offsetTop;
+          isDragging = false;
+          isPressing = true;
+          startListening(side);
+        };
+        const handleMove = (e) => {
+          if (!isPressing) return;
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          const deltaX = clientX - startX;
+          const deltaY = clientY - startY;
+          if (
+            !isDragging &&
+            (Math.abs(deltaX) > dragThreshold ||
+              Math.abs(deltaY) > dragThreshold)
+          ) {
+            isDragging = true;
+            stopListening();
+          }
+          if (isDragging) {
+            if (e.type === "touchmove") e.preventDefault();
+            if (side === "top") {
+              btn.style.left = startLeft - deltaX + "px";
+              btn.style.top = startTop - deltaY + "px";
+            } else {
+              btn.style.left = startLeft + deltaX + "px";
+              btn.style.top = startTop + deltaY + "px";
+            }
+          }
+        };
+        const handleEnd = () => {
+          isPressing = false;
+          if (!isDragging) stopListening();
+          isDragging = false;
+        };
+        btn.addEventListener("mousedown", handleStart);
+        btn.addEventListener("mousemove", handleMove);
+        window.addEventListener("mouseup", handleEnd);
+        btn.addEventListener("touchstart", handleStart, { passive: false });
+        btn.addEventListener("touchmove", handleMove, { passive: false });
+        window.addEventListener("touchend", handleEnd);
+      }
+
+      async function callGeminiAPI(text, sP, tP) {
+        if (!userApiKey) return needKeyMsg();
+        const attemptList = [selectedModel || DEFAULT_MODEL];
+        ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"].forEach(
+          (m) => {
+            if (!attemptList.includes(m)) attemptList.push(m);
+          },
+        );
+        const prompt = `You are a professional translator. Translate the following text from ${sP} to ${tP}. Output *only* the translated result. Do not include any thinking process, explanations, or notes. Text: "${text}"`;
+        let lastError = null;
+        for (const model of attemptList) {
+          try {
+            return await geminiGenerate(prompt, model);
+          } catch (e) {
+            lastError = e.message;
+            // 額度用完、模型不存在 → 換下一個模型；其他錯誤（Key 無效等）直接停
+            if (!(e.status === 429 || e.status === 404 || /limit: 0/.test(lastError)))
+              break;
+          }
+        }
+        showToast("翻譯失敗：額度不足或無可用模型", "error");
+        return `[系統訊息] ${lastError}`;
+      }
+
+      // 自動偵測語言（要 Key）。華語／台語都寫漢字，Gemini 分不清，
+      // 所以「選台語或華語、又輸入漢字」時不偵測，免得把台語來源誤改成華語。
+      async function detectLanguage(text, curIdx) {
+        if (!userApiKey) return null;
+        if (isLocalLang(curIdx) && HAN_TEST.test(text)) return null;
+        const langNames = languages.map((l) => l.prompt).join(", ");
+        const prompt = `Identify the language of the following text. Choose ONLY ONE from this list: [${langNames}]. Output only the language name. Text: "${text}"`;
+        try {
+          const detected = await geminiGenerate(prompt);
+          const index = languages.findIndex((l) =>
+            detected.toLowerCase().includes(l.prompt.toLowerCase()),
+          );
+          return index !== -1 ? index : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // 翻譯鈕狀態：台語詞庫還沒載好時，華台互翻要先等
+      let isTranslating = false;
+      function updateTranslateBtn() {
+        const b = document.getElementById("textTranslateBtn");
+        if (!b) return;
+        b.disabled = isTranslating;
+        b.innerHTML = isTranslating
+          ? '<i class="fas fa-spinner fa-spin"></i> 翻譯中…'
+          : TaigiEngine.ready
+            ? '<i class="fas fa-language"></i> 開始翻譯'
+            : '<i class="fas fa-spinner fa-spin"></i> 台語詞庫載入中…（可先輸入）';
+      }
+
+      async function doTextTranslation() {
+        const i = document.getElementById("textInput"),
+          o = document.getElementById("textOutput");
+        const sourceSelect = document.getElementById("textSourceLang");
+        const targetSelect = document.getElementById("textTargetLang");
+
+        if (!i.value.trim() || isTranslating) return;
+        isTranslating = true;
+        updateTranslateBtn();
+        o.value = "";
+        spStop();
+
+        try {
+          const detectedIdx = await detectLanguage(i.value, sourceSelect.value);
+          if (detectedIdx !== null && detectedIdx != sourceSelect.value) {
+            sourceSelect.value = detectedIdx;
+            applyInputLangs();
+            showToast(`偵測到語言: ${languages[detectedIdx].name}`);
+            if (sourceSelect.value == targetSelect.value) {
+              targetSelect.value = detectedIdx == 0 ? 1 : 0;
+            }
+          }
+          o.value = await translateSmart(
+            i.value.trim(),
+            sourceSelect.value,
+            targetSelect.value,
+          );
+        } catch (e) {
+          console.error(e);
+          o.value = "[系統訊息] 翻譯失敗：" + (e.message || e);
+        } finally {
+          isTranslating = false;
+          updateTranslateBtn();
+        }
+      }
+
+      function swapTextLanguages() {
+        const s = document.getElementById("textSourceLang"),
+          t = document.getElementById("textTargetLang");
+        [s.value, t.value] = [t.value, s.value];
+        applyInputLangs();
+        const i = document.getElementById("textInput"),
+          o = document.getElementById("textOutput");
+        if (o.value && !o.value.startsWith("[系統訊息]")) {
+          // 台語結果有「漢字＋臺羅」兩行，換過去當原文時只留漢字
+          i.value = Number(s.value) === IDX_TAI ? stripTailo(o.value) : o.value;
+          o.value = "";
+        }
+      }
+      function playTextTranslation(btn) {
+        const text = document.getElementById("textOutput").value;
+        const targetLangIdx = document.getElementById("textTargetLang").value;
+        if (text && !text.startsWith("[系統訊息]"))
+          smartSpeak(text, languages[targetLangIdx].speechCode, btn);
+        else showToast("沒有可播放的文字");
+      }
+
+      async function downloadTextAudio() {
+        const text = document.getElementById("textOutput").value;
+        const targetLangIdx = document.getElementById("textTargetLang").value;
+        let langCode = languages[targetLangIdx].speechCode;
+        if (!text || text.startsWith("[系統訊息]")) {
+          showToast("沒有內容可下載");
+          return;
+        }
+        if (text.length > 300) {
+          showToast("文字過長，無法下載 (限300字)", "error");
+          return;
+        }
+        let url,
+          name = "translation.mp3";
+        if (langCode === "nan-TW") {
+          const kip = taigiTailo(text);
+          if (!kip) {
+            showToast("這段揣無台語發音，無法下載", "error");
+            return;
+          }
+          const waitMs =
+            ITHUAN_MIN_INTERVAL_MS - (Date.now() - lastIthuanRequestTime);
+          if (waitMs > 0) {
+            showToast(
+              `意傳語音一分鐘上濟 3 句，請 ${Math.ceil(waitMs / 1000)} 秒後再試`,
+              "error",
+            );
+            return;
+          }
+          lastIthuanRequestTime = Date.now();
+          showToast("正在用意傳媠聲合成台語語音（免費展示服務）…");
+          url = ITHUAN_TTS_URL + "?taibun=" + encodeURIComponent(kip.replace(/\s+/g, " "));
+          name = "translation_taigi.mp3";
+        } else {
+          if (langCode !== "zh-TW") langCode = langCode.split("-")[0];
+          url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=dict-chrome-ex`;
+        }
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        a.target = "_blank";
+        a.rel = "noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      function startListening(side) {
+        if (isListening) return;
+        const langIdx =
+          side === "top"
+            ? document.getElementById("voiceTopLang").value
+            : document.getElementById("voiceBottomLang").value;
+        // 台語不走內建辨識（Chrome 對 nan-TW 支援很差），改讓該側泡泡暫時可編輯，
+        // 由教育部輸入法的語音鍵直接打進去；再按一次麥克風＝送出。
+        if (Number(langIdx) === IDX_TAI) {
+          if (editingSide === side) endTaigiBubbleInput(true);
+          else startTaigiBubbleInput(side);
+          return;
+        }
+        if (isIOS) {
+          if (recognition) recognition.abort();
+          recognition = getSpeechRecognition();
+        } else if (!recognition) recognition = getSpeechRecognition();
+        activeMicSide = side;
+        window.lastFinalTranscript = "";
+        window.lastInterimTranscript = "";
+        const topIdx = document.getElementById("voiceTopLang").value;
+        const bottomIdx = document.getElementById("voiceBottomLang").value;
+        recognition.lang =
+          side === "top"
+            ? languages[topIdx].speechCode
+            : languages[bottomIdx].speechCode;
+        document.getElementById(side + "OriginalText").innerText = "...";
+        document.getElementById(
+          (side === "top" ? "bottom" : "top") + "TranslatedText",
+        ).innerText = "...";
+        isListening = true;
+        updateMicUI(true);
+        try {
+          recognition.start();
+        } catch (e) {
+          if (e.name !== "InvalidStateError") {
+            isListening = false;
+            updateMicUI(false);
+          }
+        }
+      }
+      function stopListening() {
+        if (recognition) recognition.stop();
+        isListening = false;
+        updateMicUI(false);
+      }
+      function updateMicUI(l) {
+        document
+          .getElementById("topMicBtn")
+          .classList.toggle("listening", l && activeMicSide === "top");
+        document
+          .getElementById("bottomMicBtn")
+          .classList.toggle("listening", l && activeMicSide === "bottom");
+      }
+      async function doVoiceTranslation(text, side) {
+        const topIdx = document.getElementById("voiceTopLang").value;
+        const bottomIdx = document.getElementById("voiceBottomLang").value;
+        let sIdx, tIdx, out, speechLang;
+        if (side === "top") {
+          sIdx = topIdx;
+          tIdx = bottomIdx;
+          out = "bottomTranslatedText";
+          speechLang = languages[bottomIdx].speechCode;
+        } else {
+          sIdx = bottomIdx;
+          tIdx = topIdx;
+          out = "topTranslatedText";
+          speechLang = languages[topIdx].speechCode;
+        }
+        let r = "";
+        try {
+          r = (await translateSmart(text, sIdx, tIdx)) || "";
+        } catch (e) {
+          r = "[系統訊息] 翻譯失敗：" + (e.message || e);
+        }
+        document.getElementById(out).innerText = r || "...";
+        if (r && !r.startsWith("["))
+          smartSpeak(r, speechLang, document.getElementById(out));
+      }
+
+      function speakText(t, l) {
+        if (!synth) return;
+        synth.cancel();
+        const voices = synth.getVoices();
+        if (voices.length === 0) {
+          setTimeout(() => speakText(t, l), 100);
+          return;
+        }
+        const u = new SpeechSynthesisUtterance(t);
+        u.lang = l;
+        u.rate = 1.0;
+        let v = voices.find((voice) => voice.lang === l);
+        if (!v)
+          v = voices.find((voice) => voice.lang.startsWith(l.split("-")[0]));
+        if (v) u.voice = v;
+        synth.speak(u);
+      }
+    </script>
+  </body>
+</html>
