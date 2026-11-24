@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
   【著作權聲明】
-  AI 智能翻譯機 (V69) — 台語教學網頁
+  AI 智能翻譯機 (V70) — 台語教學網頁
   Copyright © 2026 詹宗龍（臺中明道中學）. All rights reserved.
   作者：詹宗龍｜宗龍的台語課 https://sites.google.com/ms.mingdao.edu.tw/tsiam
   【引用來源】
@@ -2519,6 +2519,7 @@ Output ONLY the Traditional Chinese translation, nothing else.`;
           doTextTranslation(),
         );
         setupAutoGrowInput(document.getElementById("textInput"));
+        setupAutoGrowInput(document.getElementById("textOutput"), 170);
         ["topOriginalText", "bottomOriginalText"].forEach((id) => {
           attachImeSafeEnter(document.getElementById(id), () => {
             if (editingSide) endTaigiBubbleInput(true);
@@ -3312,9 +3313,10 @@ Output ONLY the Traditional Chinese translation, nothing else.`;
         synth.speak(u);
       }
       // 文字模式輸入框：高度隨文字長度自動調整（最少 CSS 原高度，最多畫面 60%，超過才捲動）
-      function setupAutoGrowInput(el) {
+      // 結果框（textOutput）也套用，翻譯結果寫入時自動長高
+      function setupAutoGrowInput(el, fallbackMin = 140) {
         if (!el) return;
-        const minH = el.offsetHeight || 140;
+        const minH = el.offsetHeight || fallbackMin;
         const grow = () => {
           el.style.height = "auto";
           const maxH = Math.max(minH, window.innerHeight * 0.6);
